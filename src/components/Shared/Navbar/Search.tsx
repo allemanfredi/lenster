@@ -10,16 +10,17 @@ import { Mixpanel } from '@lib/mixpanel';
 import clsx from 'clsx';
 import Link from 'next/link';
 import { useRouter } from 'next/router';
-import { ChangeEvent, FC, useRef, useState } from 'react';
+import { ChangeEvent, FC, useCallback, useMemo, useRef, useState } from 'react';
 import { SEARCH } from 'src/tracking';
 
 import UserProfile from '../UserProfile';
 
 interface Props {
   hideDropdown?: boolean;
+  onSelect?: (profile: Profile) => void;
 }
 
-const Search: FC<Props> = ({ hideDropdown = false }) => {
+const Search: FC<Props> = ({ hideDropdown = false, onSelect: _onSelect }) => {
   const { push, pathname, query } = useRouter();
   const [searchText, setSearchText] = useState('');
   const dropdownRef = useRef(null);
@@ -48,6 +49,11 @@ const Search: FC<Props> = ({ hideDropdown = false }) => {
 
   const handleKeyDown = (evt: ChangeEvent<HTMLFormElement>) => {
     evt.preventDefault();
+
+    if (_onSelect) {
+      return;
+    }
+
     if (pathname === '/search') {
       push(`/search?q=${searchText}&type=${query.type}`);
     } else {
@@ -56,8 +62,18 @@ const Search: FC<Props> = ({ hideDropdown = false }) => {
     setSearchText('');
   };
 
+  const onSelect = useCallback(
+    (profile: Profile) => {
+      if (_onSelect) {
+        _onSelect(profile);
+      }
+      setSearchText('');
+    },
+    [_onSelect]
+  );
+
   // @ts-ignore
-  const profiles = searchUsersData?.search?.items ?? [];
+  const profiles = useMemo(() => searchUsersData?.search?.items ?? [], [searchUsersData]);
 
   return (
     <>
@@ -95,9 +111,15 @@ const Search: FC<Props> = ({ hideDropdown = false }) => {
               <>
                 {profiles.map((profile: Profile) => (
                   <div key={profile?.handle} className="py-2 px-4 hover:bg-gray-100 dark:hover:bg-gray-800">
-                    <Link href={`/u/${profile?.handle}`} onClick={() => setSearchText('')}>
-                      <UserProfile profile={profile} />
-                    </Link>
+                    {_onSelect ? (
+                      <div onClick={() => onSelect(profile)}>
+                        <UserProfile profile={profile} disableLink />
+                      </div>
+                    ) : (
+                      <Link href={`/u/${profile?.handle}`} onClick={() => setSearchText('')}>
+                        <UserProfile profile={profile} />
+                      </Link>
+                    )}
                   </div>
                 ))}
                 {profiles.length === 0 && <div className="py-2 px-4">No matching users</div>}

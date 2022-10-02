@@ -54,7 +54,8 @@ export const PUBLICATION = {
       OPEN_COLLECT_CONFIG: 'Open reference modal',
       EVERYONE: 'Select everyone reference',
       ONLY_FOLLOWERS: 'Select only followers reference',
-      DEGREES: 'Select degrees reference'
+      DEGREES: 'Select degrees reference',
+      PROMOTE: 'Select promote reference'
     }
   }
 };

@@ -1,5 +1,5 @@
 /* eslint-disable no-unused-vars */
-import { ReferenceModules } from '@generated/types';
+import { Profile, ReferenceModules } from '@generated/types';
 import create from 'zustand';
 
 interface ReferenceModuleState {
@@ -13,6 +13,12 @@ interface ReferenceModuleState {
   setMirrorsRestricted: (mirrorsRestricted: boolean) => void;
   degreesOfSeparation: number;
   setDegreesOfSeparation: (degreesOfSeparation: number) => void;
+  influencers: Array<Profile>;
+  setInfluencers: (influencers: Array<Profile>) => void;
+  currencies: any;
+  setCurrencies: (influencers: any) => void;
+  amounts: any;
+  setAmounts: (influencers: any) => void;
 }
 
 export const useReferenceModuleStore = create<ReferenceModuleState>((set) => ({
@@ -25,5 +31,11 @@ export const useReferenceModuleStore = create<ReferenceModuleState>((set) => ({
   mirrorsRestricted: false,
   setMirrorsRestricted: (mirrorsRestricted) => set(() => ({ mirrorsRestricted })),
   degreesOfSeparation: 2,
-  setDegreesOfSeparation: (degreesOfSeparation) => set(() => ({ degreesOfSeparation }))
+  setDegreesOfSeparation: (degreesOfSeparation) => set(() => ({ degreesOfSeparation })),
+  influencers: [],
+  setInfluencers: (influencers) => set(() => ({ influencers })),
+  currencies: [],
+  setCurrencies: (currencies) => set(() => ({ currencies })),
+  amounts: [],
+  setAmounts: (amounts) => set(() => ({ amounts }))
 }));

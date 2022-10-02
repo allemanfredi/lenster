@@ -18,6 +18,7 @@ interface Props {
   followStatusLoading?: boolean;
   isFollowing?: boolean;
   isBig?: boolean;
+  disableLink?: boolean;
 }
 
 const UserProfile: FC<Props> = ({
@@ -26,13 +27,14 @@ const UserProfile: FC<Props> = ({
   showFollow = false,
   followStatusLoading = false,
   isFollowing = false,
-  isBig = false
+  isBig = false,
+  disableLink = false
 }) => {
   const [following, setFollowing] = useState(isFollowing);
 
   return (
     <div className="flex justify-between items-center">
-      <Link href={`/u/${profile?.handle}`}>
+      <Link href={`/u/${profile?.handle}`} style={disableLink ? { pointerEvents: 'none' } : {}}>
         <div className="flex items-center space-x-3">
           <img
             src={getAvatar(profile)}

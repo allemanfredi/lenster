@@ -2740,7 +2740,8 @@ export type ReferenceModuleParams = {
 export enum ReferenceModules {
   DegreesOfSeparationReferenceModule = 'DegreesOfSeparationReferenceModule',
   FollowerOnlyReferenceModule = 'FollowerOnlyReferenceModule',
-  UnknownReferenceModule = 'UnknownReferenceModule'
+  UnknownReferenceModule = 'UnknownReferenceModule',
+  PromoteReferenceModule = 'PromoteReferenceModule'
 }
 
 /** The refresh request */
