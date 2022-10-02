@@ -17,7 +17,7 @@ import { CheckCircleIcon } from '@heroicons/react/solid';
 import { Mixpanel } from '@lib/mixpanel';
 import clsx from 'clsx';
 import { motion } from 'framer-motion';
-import { FC, useCallback, useEffect, useState } from 'react';
+import { FC, useCallback, useEffect, useMemo, useState } from 'react';
 import Search from 'src/components/Shared/Navbar/Search';
 import UserProfile from 'src/components/Shared/UserProfile';
 import { useReferenceModuleStore } from 'src/store/referencemodule';
@@ -56,9 +56,17 @@ const SelectReferenceModule: FC = () => {
   const onAddInfluencer = useCallback(
     (lensFluencer: Profile) => {
       setLocalLensFluencers([...localLensFluencers, lensFluencer]);
+      setLocalAmounts({
+        ...localAmounts,
+        [lensFluencer.handle]: '0'
+      });
+      setLocalCurrencies({
+        ...localCurrencies,
+        [lensFluencer.handle]: data?.enabledModuleCurrencies[0].address
+      });
       setEnableSave(true);
     },
-    [localLensFluencers, setLocalLensFluencers]
+    [localLensFluencers, localAmounts, localCurrencies, data?.enabledModuleCurrencies]
   );
 
   const onRemoveInfluencer = useCallback(
@@ -131,6 +139,34 @@ const SelectReferenceModule: FC = () => {
     }
   }, [showPromoteModal, lensFluencers, currencies, amounts]);
 
+  const promoteAdditionalText = useMemo(() => {
+    let text = '';
+    for (const [i, lensFluencer] of lensFluencers.entries()) {
+      const handle = lensFluencer.handle;
+      const amount = amounts[handle] || 0;
+      const currencyAddress = currencies[handle];
+      const currencySymbol = data?.enabledModuleCurrencies.find(
+        ({ address }) => currencyAddress === address
+      )?.symbol;
+      if (i >= 1) {
+        text = text + ',';
+      }
+      text = text + ` ${handle} (${amount} ${currencySymbol})`;
+    }
+    return text;
+  }, [lensFluencers, currencies, amounts, data?.enabledModuleCurrencies]);
+
+  const disableSave = useMemo(() => {
+    if (!enableSave) {
+      return true;
+    }
+    // @ts-ignore
+    if (Object.values(localAmounts).find((amount) => parseInt(amount) === 0)) {
+      return true;
+    }
+    return false;
+  }, [enableSave, localAmounts, localLensFluencers]);
+
   return (
     <>
       <Tooltip
@@ -186,7 +222,7 @@ const SelectReferenceModule: FC = () => {
               <Search onSelect={onAddInfluencer} />
             </div>
             <div>
-              <Button disabled={!enableSave} onClick={onSave} className="w-full">
+              <Button disabled={disableSave} onClick={onSave} className="w-full">
                 Save
               </Button>
             </div>
@@ -237,14 +273,29 @@ const SelectReferenceModule: FC = () => {
             onClick={() => {
               setSelectedReferenceModule(ReferenceModules.PromoteReferenceModule);
               setOnlyFollowers(false);
-              //setShowModal(false);
               setShowPromoteModal(true);
               Mixpanel.track(PUBLICATION.NEW.REFERENCE_MODULE.PROMOTE);
             }}
           >
             <div className="flex items-center space-x-3">
               <SpeakerphoneIcon className="w-5 h-5 text-brand" />
-              <div>{PROMOTE}</div>
+              <div className="flex">
+                {PROMOTE}{' '}
+                <span
+                  className="text-[12px] text-gray-500"
+                  style={{
+                    width: 250,
+                    whiteSpace: 'nowrap',
+                    marginLeft: 15,
+                    marginTop: 3,
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    textAlign: 'left'
+                  }}
+                >
+                  {promoteAdditionalText}
+                </span>{' '}
+              </div>
             </div>
             {selectedReferenceModule === ReferenceModules.PromoteReferenceModule && (
               <CheckCircleIcon className="w-7 text-green-500" />
