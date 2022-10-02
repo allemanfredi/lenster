@@ -1,4 +1,5 @@
 import { useQuery } from '@apollo/client';
+import { Button } from '@components/UI/Button';
 import { Input } from '@components/UI/Input';
 import { Modal } from '@components/UI/Modal';
 import { Tooltip } from '@components/UI/Tooltip';
@@ -16,7 +17,7 @@ import { CheckCircleIcon } from '@heroicons/react/solid';
 import { Mixpanel } from '@lib/mixpanel';
 import clsx from 'clsx';
 import { motion } from 'framer-motion';
-import { FC, useCallback, useState } from 'react';
+import { FC, useCallback, useEffect, useState } from 'react';
 import Search from 'src/components/Shared/Navbar/Search';
 import UserProfile from 'src/components/Shared/UserProfile';
 import { useReferenceModuleStore } from 'src/store/referencemodule';
@@ -24,16 +25,21 @@ import { PUBLICATION } from 'src/tracking';
 
 const SelectReferenceModule: FC = () => {
   const [showModal, setShowModal] = useState(false);
-  const [showPromoteModule, setShowPromoteModal] = useState(false);
+  const [showPromoteModal, setShowPromoteModal] = useState(false);
   const selectedReferenceModule = useReferenceModuleStore((state) => state.selectedReferenceModule);
   const setSelectedReferenceModule = useReferenceModuleStore((state) => state.setSelectedReferenceModule);
   const onlyFollowers = useReferenceModuleStore((state) => state.onlyFollowers);
   const setOnlyFollowers = useReferenceModuleStore((state) => state.setOnlyFollowers);
   const { commentsRestricted, mirrorsRestricted, degreesOfSeparation } = useReferenceModuleStore();
   const { setCommentsRestricted, setMirrorsRestricted, setDegreesOfSeparation } = useReferenceModuleStore();
-  const { influencers, setInfluencers, currencies, setCurrencies, amounts, setAmounts } =
-    useReferenceModuleStore();
   const { data } = useQuery(EnabledModulesDocument);
+
+  const { lensFluencers, setLensFluencers, currencies, setCurrencies, amounts, setAmounts } =
+    useReferenceModuleStore();
+  const [localLensFluencers, setLocalLensFluencers] = useState(lensFluencers);
+  const [localCurrencies, setLocalCurrencies] = useState(currencies);
+  const [localAmounts, setLocalAmounts] = useState(amounts);
+  const [enableSave, setEnableSave] = useState(false);
 
   const ONLY_FOLLOWERS = 'Only followers can comment or mirror';
   const EVERYONE = 'Everyone can comment or mirror';
@@ -48,41 +54,82 @@ const SelectReferenceModule: FC = () => {
     selectedReferenceModule === ReferenceModules.DegreesOfSeparationReferenceModule;
 
   const onAddInfluencer = useCallback(
-    (influencer: Profile) => {
-      setInfluencers([...influencers, influencer]);
+    (lensFluencer: Profile) => {
+      setLocalLensFluencers([...localLensFluencers, lensFluencer]);
+      setEnableSave(true);
     },
-    [influencers, setInfluencers]
+    [localLensFluencers, setLocalLensFluencers]
   );
 
   const onRemoveInfluencer = useCallback(
-    (influencer: Profile) => {
-      setInfluencers(influencers.filter(({ handle }) => handle !== influencer.handle));
+    (lensFluencer: Profile) => {
+      setLocalLensFluencers(localLensFluencers.filter(({ handle }) => handle !== lensFluencer.handle));
+      setLocalAmounts(
+        Object.keys(localAmounts).reduce((acc, handle) => {
+          if (handle === lensFluencer.handle) {
+            return acc;
+          }
+          // @ts-ignore
+          acc[handle] = localAmounts[handle];
+          return acc;
+        }, {})
+      );
+      setLocalCurrencies(
+        Object.keys(localCurrencies).reduce((acc, handle) => {
+          if (handle === lensFluencer.handle) {
+            return acc;
+          }
+          // @ts-ignore
+          acc[handle] = localCurrencies[handle];
+          return acc;
+        }, {})
+      );
+      setEnableSave(true);
     },
-    [influencers, setInfluencers]
+    [localLensFluencers, setLocalLensFluencers]
   );
 
   const onSelectCurrency = useCallback(
     (event: any, profile: Profile) => {
       // @ts-ignore
       const value = event.target.value;
-      setCurrencies({
-        ...currencies,
+      setLocalCurrencies({
+        ...localCurrencies,
         [profile.handle]: value
       });
+      setEnableSave(true);
     },
-    [currencies, setCurrencies]
+    [localCurrencies, setLocalCurrencies]
   );
 
   const onChangeAmount = useCallback(
     (event: any, profile: Profile) => {
       const value = event.target.value;
-      setAmounts({
-        ...amounts,
+      setLocalAmounts({
+        ...localAmounts,
         [profile.handle]: value
       });
+      setEnableSave(true);
     },
-    [amounts, setAmounts]
+    [localAmounts, setLocalAmounts]
   );
+
+  const onSave = useCallback(() => {
+    setLensFluencers(localLensFluencers);
+    setCurrencies(localCurrencies);
+    setAmounts(localAmounts);
+    setShowPromoteModal(false);
+    setEnableSave(false);
+  }, [localLensFluencers, localCurrencies, localAmounts, setLensFluencers, setCurrencies, setAmounts]);
+
+  useEffect(() => {
+    if (showPromoteModal) {
+      setLocalLensFluencers(lensFluencers);
+      setLocalCurrencies(currencies);
+      setLocalAmounts(amounts);
+      setEnableSave(false);
+    }
+  }, [showPromoteModal, lensFluencers, currencies, amounts]);
 
   return (
     <>
@@ -125,16 +172,26 @@ const SelectReferenceModule: FC = () => {
         size="md"
         title="Who would you like to promote the post by?"
         icon={<SpeakerphoneIcon className="w-5 h-5 text-brand" />}
-        show={showPromoteModule}
-        onClose={() => setShowPromoteModal(false)}
+        show={showPromoteModal}
+        onClose={() => {
+          setLocalLensFluencers([]);
+          setLocalAmounts([]);
+          setLocalCurrencies([]);
+          setShowPromoteModal(false);
+        }}
       >
         <div>
           <div className="flex p-3 items-center space-x-3">
             <div className="w-full">
               <Search onSelect={onAddInfluencer} />
             </div>
+            <div>
+              <Button disabled={!enableSave} onClick={onSave} className="w-full">
+                Save
+              </Button>
+            </div>
           </div>
-          {influencers.map((profile, index) => {
+          {localLensFluencers.map((profile, index) => {
             return (
               <div className="flex p-3 items-center space-x-3" key={profile.handle}>
                 <div className="w-full">
@@ -143,7 +200,7 @@ const SelectReferenceModule: FC = () => {
                 <select
                   className="w-full bg-white rounded-xl border border-gray-300 outline-none dark:bg-gray-800 disabled:bg-gray-500 disabled:bg-opacity-20 disabled:opacity-60 dark:border-gray-700/80 focus:border-brand-500 focus:ring-brand-400"
                   onChange={(e) => onSelectCurrency(e, profile)}
-                  value={currencies[profile.handle]}
+                  value={localCurrencies[profile.handle]}
                 >
                   {data?.enabledModuleCurrencies.map((currency: Erc20) => (
                     <option key={currency.address} value={currency.address}>
@@ -152,7 +209,7 @@ const SelectReferenceModule: FC = () => {
                   ))}
                 </select>
                 <Input
-                  value={amounts[profile.handle] || ''}
+                  value={localAmounts[profile.handle] || ''}
                   onChange={(event) => onChangeAmount(event, profile)}
                 />
                 <button onClick={() => onRemoveInfluencer(profile)}>

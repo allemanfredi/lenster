@@ -13,12 +13,12 @@ interface ReferenceModuleState {
   setMirrorsRestricted: (mirrorsRestricted: boolean) => void;
   degreesOfSeparation: number;
   setDegreesOfSeparation: (degreesOfSeparation: number) => void;
-  influencers: Array<Profile>;
-  setInfluencers: (influencers: Array<Profile>) => void;
+  lensFluencers: Array<Profile>;
+  setLensFluencers: (lensFluencers: Array<Profile>) => void;
   currencies: any;
-  setCurrencies: (influencers: any) => void;
+  setCurrencies: (lensFluencers: any) => void;
   amounts: any;
-  setAmounts: (influencers: any) => void;
+  setAmounts: (lensFluencers: any) => void;
 }
 
 export const useReferenceModuleStore = create<ReferenceModuleState>((set) => ({
@@ -32,8 +32,8 @@ export const useReferenceModuleStore = create<ReferenceModuleState>((set) => ({
   setMirrorsRestricted: (mirrorsRestricted) => set(() => ({ mirrorsRestricted })),
   degreesOfSeparation: 2,
   setDegreesOfSeparation: (degreesOfSeparation) => set(() => ({ degreesOfSeparation })),
-  influencers: [],
-  setInfluencers: (influencers) => set(() => ({ influencers })),
+  lensFluencers: [],
+  setLensFluencers: (lensFluencers) => set(() => ({ lensFluencers })),
   currencies: [],
   setCurrencies: (currencies) => set(() => ({ currencies })),
   amounts: [],
