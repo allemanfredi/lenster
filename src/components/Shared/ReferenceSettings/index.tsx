@@ -31,6 +31,7 @@ const ReferenceSettings: FC = () => {
   const isMyFollowers = isFollowerOnlyReferenceModule && onlyFollowers;
   const isMyFollows = isDegreesOfSeparationReferenceModule && degreesOfSeparation === 1;
   const isFriendsOfFriends = isDegreesOfSeparationReferenceModule && degreesOfSeparation === 2;
+  const promoteModuleEnabled = selectedReferenceModule === ReferenceModules.PromoteModule;
 
   interface ModuleProps {
     title: string;
@@ -63,7 +64,7 @@ const ReferenceSettings: FC = () => {
             }}
           >
             <div className="text-brand">
-              {isEveryone && <GlobeAltIcon className="w-5" />}
+              {(isEveryone || promoteModuleEnabled) && <GlobeAltIcon className="w-5" />}
               {isMyFollowers && <UsersIcon className="w-5" />}
               {isMyFollows && <UserAddIcon className="w-5" />}
               {isFriendsOfFriends && <UserGroupIcon className="w-5" />}

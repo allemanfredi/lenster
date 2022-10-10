@@ -18,15 +18,30 @@ import { PUBLICATION } from 'src/tracking';
 
 const PromoteModule: FC = () => {
   const [showModal, setShowModal] = useState(false);
-  const setSelectedReferenceModule = useReferenceModuleStore((state) => state.setSelectedReferenceModule);
   const { data } = useQuery(EnabledModulesDocument);
-
-  const { lensFluencers, setLensFluencers, currencies, setCurrencies, amounts, setAmounts } =
-    useReferenceModuleStore();
+  const {
+    lensFluencers,
+    setLensFluencers,
+    currencies,
+    setCurrencies,
+    amounts,
+    setAmounts,
+    selectedReferenceModule,
+    setSelectedReferenceModule
+  } = useReferenceModuleStore();
   const [localLensFluencers, setLocalLensFluencers] = useState(lensFluencers);
   const [localCurrencies, setLocalCurrencies] = useState(currencies);
   const [localAmounts, setLocalAmounts] = useState(amounts);
   const [enableSave, setEnableSave] = useState(false);
+
+  const toEnable = useMemo(
+    () =>
+      selectedReferenceModule !== ReferenceModules.PromoteModule &&
+      Object.keys(currencies).length > 0 &&
+      lensFluencers.length > 0 &&
+      Object.keys(amounts).length > 0,
+    [selectedReferenceModule, currencies, lensFluencers, amounts]
+  );
 
   const onAddInfluencer = useCallback(
     (lensFluencer: Profile) => {
@@ -98,6 +113,11 @@ const PromoteModule: FC = () => {
   );
 
   const onSave = useCallback(() => {
+    if (toEnable) {
+      setSelectedReferenceModule(ReferenceModules.PromoteModule);
+      return;
+    }
+
     setLensFluencers(localLensFluencers);
     setCurrencies(localCurrencies);
     setAmounts(localAmounts);
@@ -105,6 +125,7 @@ const PromoteModule: FC = () => {
     setEnableSave(false);
     setSelectedReferenceModule(ReferenceModules.PromoteModule);
   }, [
+    toEnable,
     localLensFluencers,
     localCurrencies,
     localAmounts,
@@ -170,8 +191,8 @@ const PromoteModule: FC = () => {
               <Search onSelect={onAddInfluencer} />
             </div>
             <div>
-              <Button disabled={disableSave} onClick={onSave} className="w-full">
-                Save
+              <Button disabled={toEnable ? false : disableSave} onClick={onSave} className="w-full">
+                {toEnable ? 'Enable' : 'Save'}
               </Button>
             </div>
           </div>
