@@ -4,10 +4,11 @@ import WalletProfile from '@components/Shared/WalletProfile';
 import { EmptyState } from '@components/UI/EmptyState';
 import { ErrorMessage } from '@components/UI/ErrorMessage';
 import { Spinner } from '@components/UI/Spinner';
-import { CollectorsDocument } from '@generated/documents';
+import type { Profile, Wallet } from '@generated/types';
+import { CollectorsDocument } from '@generated/types';
 import { CollectionIcon } from '@heroicons/react/outline';
 import { Mixpanel } from '@lib/mixpanel';
-import { FC } from 'react';
+import type { FC } from 'react';
 import { useInView } from 'react-cool-inview';
 import { PAGINATION_ROOT_MARGIN } from 'src/constants';
 import { PAGINATION } from 'src/tracking';
@@ -65,17 +66,17 @@ const Collectors: FC<Props> = ({ publicationId }) => {
       <ErrorMessage className="m-5" title="Failed to load collectors" error={error} />
       <div className="space-y-3">
         <div className="divide-y dark:divide-gray-700">
-          {profiles?.map((wallet: any) => (
+          {profiles?.map((wallet) => (
             <div className="p-5" key={wallet?.address}>
               {wallet?.defaultProfile ? (
                 <UserProfile
-                  profile={wallet?.defaultProfile}
+                  profile={wallet?.defaultProfile as Profile}
                   showBio
                   showFollow
                   isFollowing={wallet?.defaultProfile?.isFollowedByMe}
                 />
               ) : (
-                <WalletProfile wallet={wallet} />
+                <WalletProfile wallet={wallet as Wallet} />
               )}
             </div>
           ))}

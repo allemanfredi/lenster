@@ -1,12 +1,11 @@
 import clsx from 'clsx';
-import { ElementType, FC, MouseEvent, ReactNode } from 'react';
+import type { ElementType, FC, MouseEvent, ReactNode } from 'react';
 
 interface CardProps {
   children: ReactNode;
   as?: ElementType;
   className?: string;
   forceRounded?: boolean;
-  // eslint-disable-next-line no-unused-vars
   onClick?: (event: MouseEvent<HTMLDivElement>) => void;
 }
 
@@ -29,12 +28,4 @@ export const Card: FC<CardProps> = ({
       {children}
     </Tag>
   );
-};
-
-interface CardBodyProps {
-  children?: ReactNode;
-  className?: string;
-}
-export const CardBody: FC<CardBodyProps> = ({ children, className = '' }) => {
-  return <div className={`p-5 ${className}`}>{children}</div>;
 };

@@ -1,9 +1,9 @@
-import { ProfileStats } from '@generated/types';
+import type { ProfileStats } from '@generated/types';
 import { ChatAlt2Icon, FilmIcon, PencilAltIcon, PhotographIcon } from '@heroicons/react/outline';
 import { Mixpanel } from '@lib/mixpanel';
 import nFormatter from '@lib/nFormatter';
 import clsx from 'clsx';
-import React, { Dispatch, FC, ReactNode } from 'react';
+import type { Dispatch, FC, ReactNode } from 'react';
 
 interface Props {
   stats: ProfileStats;
@@ -35,11 +35,11 @@ const FeedType: FC<Props> = ({ stats, setFeedType, feedType }) => {
       aria-label={name}
     >
       {icon}
-      <div className="hidden sm:block">{name}</div>
+      <span className="hidden sm:block">{name}</span>
       {count ? (
-        <div className="px-2 text-xs font-medium rounded-full bg-brand-200 dark:bg-brand-800">
+        <span className="px-2 text-xs font-medium rounded-full bg-brand-200 dark:bg-brand-800">
           {nFormatter(count)}
-        </div>
+        </span>
       ) : null}
     </button>
   );

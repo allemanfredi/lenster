@@ -1,5 +1,5 @@
-import { ChildrenNode, Matcher } from 'interweave';
-import React from 'react';
+import type { ChildrenNode } from 'interweave';
+import { Matcher } from 'interweave';
 
 export class MDBoldMatcher extends Matcher {
   replaceWith(children: ChildrenNode) {

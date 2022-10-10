@@ -7,18 +7,19 @@ import { Form, useZodForm } from '@components/UI/Form';
 import { Input } from '@components/UI/Input';
 import { Spinner } from '@components/UI/Spinner';
 import useBroadcast from '@components/utils/hooks/useBroadcast';
+import type { Mutation, NftImage, Profile } from '@generated/types';
 import {
   CreateSetProfileImageUriTypedDataDocument,
   CreateSetProfileImageUriViaDispatcherDocument,
   NftChallengeDocument
-} from '@generated/documents';
-import { CreateSetProfileImageUriBroadcastItemResult, Mutation, NftImage, Profile } from '@generated/types';
+} from '@generated/types';
 import { PencilIcon } from '@heroicons/react/outline';
 import getSignature from '@lib/getSignature';
 import { Mixpanel } from '@lib/mixpanel';
 import onError from '@lib/onError';
 import splitSignature from '@lib/splitSignature';
-import React, { FC, useState } from 'react';
+import type { FC } from 'react';
+import { useState } from 'react';
 import toast from 'react-hot-toast';
 import { ADDRESS_REGEX, IS_MAINNET, LENSHUB_PROXY, RELAY_ON, SIGN_WALLET } from 'src/constants';
 import { useAppStore } from 'src/store/app';
@@ -77,14 +78,10 @@ const NFTPicture: FC<Props> = ({ profile }) => {
   const [createSetProfileImageURITypedData, { loading: typedDataLoading }] = useMutation<Mutation>(
     CreateSetProfileImageUriTypedDataDocument,
     {
-      onCompleted: async ({
-        createSetProfileImageURITypedData
-      }: {
-        createSetProfileImageURITypedData: CreateSetProfileImageUriBroadcastItemResult;
-      }) => {
+      onCompleted: async ({ createSetProfileImageURITypedData }) => {
         try {
           const { id, typedData } = createSetProfileImageURITypedData;
-          const { profileId, imageURI, deadline } = typedData?.value;
+          const { profileId, imageURI, deadline } = typedData.value;
           const signature = await signTypedDataAsync(getSignature(typedData));
           const { v, r, s } = splitSignature(signature);
           const sig = { v, r, s, deadline };

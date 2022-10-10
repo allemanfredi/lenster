@@ -1,11 +1,12 @@
 import { useQuery } from '@apollo/client';
 import { Modal } from '@components/UI/Modal';
-import { MutualFollowersDocument } from '@generated/documents';
-import { Profile } from '@generated/types';
+import type { Profile } from '@generated/types';
+import { MutualFollowersDocument } from '@generated/types';
 import { UsersIcon } from '@heroicons/react/outline';
 import getAvatar from '@lib/getAvatar';
 import { Mixpanel } from '@lib/mixpanel';
-import React, { FC, ReactNode, useState } from 'react';
+import type { FC, ReactNode } from 'react';
+import { useState } from 'react';
 import { useAppStore } from 'src/store/app';
 import { PROFILE } from 'src/tracking';
 
@@ -43,9 +44,9 @@ const MutualFollowers: FC<Props> = ({ profile }) => {
       }}
     >
       <div className="contents -space-x-2">
-        {profiles?.map((profile: any) => (
+        {profiles?.map((profile) => (
           <img
-            key={profile?.id}
+            key={profile.handle}
             className="w-5 h-5 rounded-full border dark:border-gray-700/80"
             src={getAvatar(profile)}
             alt={profile?.handle}

@@ -1,15 +1,15 @@
 import { useQuery } from '@apollo/client';
 import UserProfilesShimmer from '@components/Shared/Shimmer/UserProfilesShimmer';
 import UserProfile from '@components/Shared/UserProfile';
-import { Card, CardBody } from '@components/UI/Card';
+import { Card } from '@components/UI/Card';
 import { EmptyState } from '@components/UI/EmptyState';
 import { ErrorMessage } from '@components/UI/ErrorMessage';
 import { Spinner } from '@components/UI/Spinner';
-import { SearchProfilesDocument } from '@generated/documents';
-import { CustomFiltersTypes, Profile, SearchRequestTypes } from '@generated/types';
+import type { Profile } from '@generated/types';
+import { CustomFiltersTypes, SearchProfilesDocument, SearchRequestTypes } from '@generated/types';
 import { UsersIcon } from '@heroicons/react/outline';
 import { Mixpanel } from '@lib/mixpanel';
-import React, { FC } from 'react';
+import type { FC } from 'react';
 import { useInView } from 'react-cool-inview';
 import { PAGINATION_ROOT_MARGIN } from 'src/constants';
 import { PAGINATION } from 'src/tracking';
@@ -51,37 +51,40 @@ const Profiles: FC<Props> = ({ query }) => {
     rootMargin: PAGINATION_ROOT_MARGIN
   });
 
+  if (loading) {
+    return <UserProfilesShimmer isBig />;
+  }
+
+  if (profiles?.length === 0) {
+    return (
+      <EmptyState
+        message={
+          <div>
+            No profiles for <b>&ldquo;{query}&rdquo;</b>
+          </div>
+        }
+        icon={<UsersIcon className="w-8 h-8 text-brand" />}
+      />
+    );
+  }
+
+  if (error) {
+    return <ErrorMessage title="Failed to load profiles" error={error} />;
+  }
+
   return (
     <>
-      {loading && <UserProfilesShimmer isBig />}
-      {profiles?.length === 0 && (
-        <EmptyState
-          message={
-            <div>
-              No profiles for <b>&ldquo;{query}&rdquo;</b>
-            </div>
-          }
-          icon={<UsersIcon className="w-8 h-8 text-brand" />}
-        />
-      )}
-      <ErrorMessage title="Failed to load profiles list" error={error} />
-      {!error && !loading && (
-        <>
-          <div className="space-y-3">
-            {profiles?.map((profile: Profile) => (
-              <Card key={profile?.id}>
-                <CardBody>
-                  <UserProfile profile={profile} showBio isBig />
-                </CardBody>
-              </Card>
-            ))}
-          </div>
-          {pageInfo?.next && profiles?.length !== pageInfo.totalCount && (
-            <span ref={observe} className="flex justify-center p-5">
-              <Spinner size="sm" />
-            </span>
-          )}
-        </>
+      <div className="space-y-3">
+        {profiles?.map((profile: Profile) => (
+          <Card key={profile?.id} className="p-5">
+            <UserProfile profile={profile} showBio isBig />
+          </Card>
+        ))}
+      </div>
+      {pageInfo?.next && profiles?.length !== pageInfo.totalCount && (
+        <span ref={observe} className="flex justify-center p-5">
+          <Spinner size="sm" />
+        </span>
       )}
     </>
   );

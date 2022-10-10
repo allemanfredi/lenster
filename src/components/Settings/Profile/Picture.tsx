@@ -6,16 +6,10 @@ import { Button } from '@components/UI/Button';
 import { ErrorMessage } from '@components/UI/ErrorMessage';
 import { Spinner } from '@components/UI/Spinner';
 import useBroadcast from '@components/utils/hooks/useBroadcast';
+import type { MediaSet, Mutation, NftImage, Profile } from '@generated/types';
 import {
   CreateSetProfileImageUriTypedDataDocument,
   CreateSetProfileImageUriViaDispatcherDocument
-} from '@generated/documents';
-import {
-  CreateSetProfileImageUriBroadcastItemResult,
-  MediaSet,
-  Mutation,
-  NftImage,
-  Profile
 } from '@generated/types';
 import { PencilIcon } from '@heroicons/react/outline';
 import getIPFSLink from '@lib/getIPFSLink';
@@ -25,7 +19,8 @@ import { Mixpanel } from '@lib/mixpanel';
 import onError from '@lib/onError';
 import splitSignature from '@lib/splitSignature';
 import uploadMediaToIPFS from '@lib/uploadMediaToIPFS';
-import React, { ChangeEvent, FC, useEffect, useState } from 'react';
+import type { ChangeEvent, FC } from 'react';
+import { useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
 import { LENSHUB_PROXY, RELAY_ON, SIGN_WALLET } from 'src/constants';
 import { useAppStore } from 'src/store/app';
@@ -74,14 +69,10 @@ const Picture: FC<Props> = ({ profile }) => {
   const [createSetProfileImageURITypedData, { loading: typedDataLoading }] = useMutation<Mutation>(
     CreateSetProfileImageUriTypedDataDocument,
     {
-      onCompleted: async ({
-        createSetProfileImageURITypedData
-      }: {
-        createSetProfileImageURITypedData: CreateSetProfileImageUriBroadcastItemResult;
-      }) => {
+      onCompleted: async ({ createSetProfileImageURITypedData }) => {
         try {
           const { id, typedData } = createSetProfileImageURITypedData;
-          const { profileId, imageURI, deadline } = typedData?.value;
+          const { profileId, imageURI, deadline } = typedData.value;
           const signature = await signTypedDataAsync(getSignature(typedData));
           const { v, r, s } = splitSignature(signature);
           const sig = { v, r, s, deadline };

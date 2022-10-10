@@ -1,4 +1,4 @@
-import React, { FC, ReactNode } from 'react';
+import type { FC, ReactNode } from 'react';
 
 import { Card } from './Card';
 

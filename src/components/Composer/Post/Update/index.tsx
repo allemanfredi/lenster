@@ -3,31 +3,31 @@ import { useMutation } from '@apollo/client';
 import Attachments from '@components/Shared/Attachments';
 import Markup from '@components/Shared/Markup';
 import { Button } from '@components/UI/Button';
-import { Card } from '@components/UI/Card';
 import { ErrorMessage } from '@components/UI/ErrorMessage';
 import { MentionTextArea } from '@components/UI/MentionTextArea';
 import { Spinner } from '@components/UI/Spinner';
 import useBroadcast from '@components/utils/hooks/useBroadcast';
-import { CreatePostTypedDataDocument, CreatePostViaDispatcherDocument } from '@generated/documents';
-import { LensterAttachment } from '@generated/lenstertypes';
+import type { LensterAttachment } from '@generated/lenstertypes';
+import type { Mutation } from '@generated/types';
 import {
-  CreatePostBroadcastItemResult,
-  Mutation,
+  CreatePostTypedDataDocument,
+  CreatePostViaDispatcherDocument,
   PublicationMainFocus,
   ReferenceModules
 } from '@generated/types';
-import { IGif } from '@giphy/js-types';
+import type { IGif } from '@giphy/js-types';
 import { PencilAltIcon } from '@heroicons/react/outline';
-import { defaultFeeData, defaultModuleData, getModule } from '@lib/getModule';
 import getSignature from '@lib/getSignature';
 import getTags from '@lib/getTags';
+import getUserLocale from '@lib/getUserLocale';
 import { Mixpanel } from '@lib/mixpanel';
 import onError from '@lib/onError';
 import splitSignature from '@lib/splitSignature';
 import trimify from '@lib/trimify';
 import uploadToArweave from '@lib/uploadToArweave';
 import dynamic from 'next/dynamic';
-import { FC, useState } from 'react';
+import type { FC } from 'react';
+import { useState } from 'react';
 import toast from 'react-hot-toast';
 import { APP_NAME, LENSHUB_PROXY, RELAY_ON, SIGN_WALLET } from 'src/constants';
 import { useAppStore } from 'src/store/app';
@@ -39,43 +39,52 @@ import { POST } from 'src/tracking';
 import { v4 as uuid } from 'uuid';
 import { useContractWrite, useSignTypedData } from 'wagmi';
 
-const Attachment = dynamic(() => import('../../Shared/Attachment'), {
+const Attachment = dynamic(() => import('@components/Shared/Attachment'), {
   loading: () => <div className="mb-1 w-5 h-5 rounded-lg shimmer" />
 });
-const Giphy = dynamic(() => import('../../Shared/Giphy'), {
+const Giphy = dynamic(() => import('@components/Shared/Giphy'), {
   loading: () => <div className="mb-1 w-5 h-5 rounded-lg shimmer" />
 });
-const SelectCollectModule = dynamic(() => import('../../Shared/SelectCollectModule'), {
+const CollectSettings = dynamic(() => import('@components/Shared/CollectSettings'), {
   loading: () => <div className="mb-1 w-5 h-5 rounded-lg shimmer" />
 });
-const SelectReferenceModule = dynamic(() => import('../../Shared/SelectReferenceModule'), {
+const ReferenceSettings = dynamic(() => import('@components/Shared/ReferenceSettings'), {
   loading: () => <div className="mb-1 w-5 h-5 rounded-lg shimmer" />
 });
-const Preview = dynamic(() => import('../../Shared/Preview'), {
+const Preview = dynamic(() => import('@components/Shared/Preview'), {
+  loading: () => <div className="mb-1 w-5 h-5 rounded-lg shimmer" />
+});
+const PromoteModule = dynamic(() => import('@components/Shared/PromoteModule'), {
   loading: () => <div className="mb-1 w-5 h-5 rounded-lg shimmer" />
 });
 
-interface Props {
-  hideCard?: boolean;
-}
-
-const NewPost: FC<Props> = ({ hideCard = false }) => {
+const NewUpdate: FC = () => {
+  // App store
   const userSigNonce = useAppStore((state) => state.userSigNonce);
   const setUserSigNonce = useAppStore((state) => state.setUserSigNonce);
   const currentProfile = useAppStore((state) => state.currentProfile);
+
+  // Publication store
   const publicationContent = usePublicationStore((state) => state.publicationContent);
   const setPublicationContent = usePublicationStore((state) => state.setPublicationContent);
   const previewPublication = usePublicationStore((state) => state.previewPublication);
   const setPreviewPublication = usePublicationStore((state) => state.setPreviewPublication);
+  const setShowNewPostModal = usePublicationStore((state) => state.setShowNewPostModal);
+
+  // Transaction persist store
   const txnQueue = useTransactionPersistStore((state) => state.txnQueue);
   const setTxnQueue = useTransactionPersistStore((state) => state.setTxnQueue);
-  const selectedCollectModule = useCollectModuleStore((state) => state.selectedCollectModule);
-  const setSelectedCollectModule = useCollectModuleStore((state) => state.setSelectedCollectModule);
-  const feeData = useCollectModuleStore((state) => state.feeData);
-  const setFeeData = useCollectModuleStore((state) => state.setFeeData);
+
+  // Collect module store
+  const resetCollectSettings = useCollectModuleStore((state) => state.reset);
+  const payload = useCollectModuleStore((state) => state.payload);
+
+  // Reference module store
   const selectedReferenceModule = useReferenceModuleStore((state) => state.selectedReferenceModule);
   const onlyFollowers = useReferenceModuleStore((state) => state.onlyFollowers);
-  const { commentsRestricted, mirrorsRestricted, degreesOfSeparation } = useReferenceModuleStore();
+  const degreesOfSeparation = useReferenceModuleStore((state) => state.degreesOfSeparation);
+
+  // States
   const [postContentError, setPostContentError] = useState('');
   const [isUploading, setIsUploading] = useState(false);
   const [attachments, setAttachments] = useState<LensterAttachment[]>([]);
@@ -83,10 +92,10 @@ const NewPost: FC<Props> = ({ hideCard = false }) => {
 
   const onCompleted = () => {
     setPreviewPublication(false);
+    setShowNewPostModal(false);
     setPublicationContent('');
     setAttachments([]);
-    setSelectedCollectModule(defaultModuleData);
-    setFeeData(defaultFeeData);
+    resetCollectSettings();
     Mixpanel.track(POST.NEW);
   };
 
@@ -125,11 +134,7 @@ const NewPost: FC<Props> = ({ hideCard = false }) => {
   const [createPostTypedData, { loading: typedDataLoading }] = useMutation<Mutation>(
     CreatePostTypedDataDocument,
     {
-      onCompleted: async ({
-        createPostTypedData
-      }: {
-        createPostTypedData: CreatePostBroadcastItemResult;
-      }) => {
+      onCompleted: async ({ createPostTypedData }) => {
         try {
           const { id, typedData } = createPostTypedData;
           const {
@@ -140,7 +145,7 @@ const NewPost: FC<Props> = ({ hideCard = false }) => {
             referenceModule,
             referenceModuleInitData,
             deadline
-          } = typedData?.value;
+          } = typedData.value;
           const signature = await signTypedDataAsync(getSignature(typedData));
           const { v, r, s } = splitSignature(signature);
           const sig = { v, r, s, deadline };
@@ -195,7 +200,6 @@ const NewPost: FC<Props> = ({ hideCard = false }) => {
 
     setPostContentError('');
     setIsUploading(true);
-    // TODO: Add animated_url support
     const id = await uploadToArweave({
       version: '2.0.0',
       metadata_id: uuid(),
@@ -221,7 +225,7 @@ const NewPost: FC<Props> = ({ hideCard = false }) => {
         }
       ],
       media: attachments,
-      locale: 'en',
+      locale: getUserLocale(),
       createdOn: new Date(),
       appId: APP_NAME
     }).finally(() => setIsUploading(false));
@@ -229,18 +233,14 @@ const NewPost: FC<Props> = ({ hideCard = false }) => {
     const request = {
       profileId: currentProfile?.id,
       contentURI: `https://arweave.net/${id}`,
-      collectModule: feeData.recipient
-        ? {
-            [getModule(selectedCollectModule.moduleName).config]: feeData
-          }
-        : getModule(selectedCollectModule.moduleName).config,
+      collectModule: payload,
       referenceModule:
         selectedReferenceModule === ReferenceModules.FollowerOnlyReferenceModule
           ? { followerOnlyReferenceModule: onlyFollowers ? true : false }
           : {
               degreesOfSeparationReferenceModule: {
-                commentsRestricted,
-                mirrorsRestricted,
+                commentsRestricted: true,
+                mirrorsRestricted: true,
                 degreesOfSeparation
               }
             }
@@ -264,7 +264,7 @@ const NewPost: FC<Props> = ({ hideCard = false }) => {
     const attachment = {
       item: gif.images.original.url,
       type: 'image/gif',
-      altTag: ''
+      altTag: gif.title
     };
     setAttachments([...attachments, attachment]);
   };
@@ -273,44 +273,45 @@ const NewPost: FC<Props> = ({ hideCard = false }) => {
     isUploading || typedDataLoading || dispatcherLoading || signLoading || writeLoading || broadcastLoading;
 
   return (
-    <Card className={hideCard ? 'border-0 !shadow-none !bg-transparent' : ''}>
-      <div className="px-5 pt-5 pb-3">
-        <div className="space-y-1">
-          {error && <ErrorMessage className="mb-3" title="Transaction failed!" error={error} />}
-          {previewPublication ? (
-            <div className="pb-3 mb-2 border-b linkify dark:border-b-gray-700/80 break-words">
-              <Markup>{publicationContent}</Markup>
-            </div>
-          ) : (
-            <MentionTextArea
-              error={postContentError}
-              setError={setPostContentError}
-              placeholder="What's happening?"
-            />
-          )}
-          <div className="block items-center sm:flex">
-            <div className="flex items-center space-x-4">
-              <Attachment attachments={attachments} setAttachments={setAttachments} />
-              <Giphy setGifAttachment={(gif: IGif) => setGifAttachment(gif)} />
-              <SelectCollectModule />
-              <SelectReferenceModule />
-              {publicationContent && <Preview />}
-            </div>
-            <div className="ml-auto pt-2 sm:pt-0">
-              <Button
-                disabled={isLoading}
-                icon={isLoading ? <Spinner size="xs" /> : <PencilAltIcon className="w-4 h-4" />}
-                onClick={createPost}
-              >
-                Post
-              </Button>
-            </div>
-          </div>
-          <Attachments attachments={attachments} setAttachments={setAttachments} isNew />
+    <div className="py-3">
+      {error && <ErrorMessage className="mb-3" title="Transaction failed!" error={error} />}
+      {previewPublication ? (
+        <div className="pb-3 mb-2 border-b linkify dark:border-b-gray-700/80 break-words">
+          <Markup>{publicationContent}</Markup>
+        </div>
+      ) : (
+        <MentionTextArea
+          error={postContentError}
+          setError={setPostContentError}
+          placeholder="What's happening?"
+          hideBorder
+          autoFocus
+        />
+      )}
+      <div className="block items-center sm:flex px-5">
+        <div className="flex items-center space-x-4">
+          <Attachment attachments={attachments} setAttachments={setAttachments} />
+          <Giphy setGifAttachment={(gif: IGif) => setGifAttachment(gif)} />
+          <CollectSettings />
+          <ReferenceSettings />
+          <PromoteModule />
+          {publicationContent && <Preview />}
+        </div>
+        <div className="ml-auto pt-2 sm:pt-0">
+          <Button
+            disabled={isLoading}
+            icon={isLoading ? <Spinner size="xs" /> : <PencilAltIcon className="w-4 h-4" />}
+            onClick={createPost}
+          >
+            Post
+          </Button>
         </div>
       </div>
-    </Card>
+      <div className="px-5">
+        <Attachments attachments={attachments} setAttachments={setAttachments} isNew />
+      </div>
+    </div>
   );
 };
 
-export default NewPost;
+export default NewUpdate;

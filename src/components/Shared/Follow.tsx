@@ -1,16 +1,17 @@
 import { LensHubProxy } from '@abis/LensHubProxy';
-import { ApolloCache, useMutation } from '@apollo/client';
+import type { ApolloCache } from '@apollo/client';
+import { useMutation } from '@apollo/client';
 import { Button } from '@components/UI/Button';
 import { Spinner } from '@components/UI/Spinner';
 import useBroadcast from '@components/utils/hooks/useBroadcast';
-import { CreateFollowTypedDataDocument, ProxyActionDocument } from '@generated/documents';
-import { CreateFollowBroadcastItemResult, Mutation, Profile } from '@generated/types';
+import type { Mutation, Profile } from '@generated/types';
+import { CreateFollowTypedDataDocument, ProxyActionDocument } from '@generated/types';
 import { UserAddIcon } from '@heroicons/react/outline';
 import getSignature from '@lib/getSignature';
 import { Mixpanel } from '@lib/mixpanel';
 import onError from '@lib/onError';
 import splitSignature from '@lib/splitSignature';
-import { Dispatch, FC } from 'react';
+import type { Dispatch, FC } from 'react';
 import toast from 'react-hot-toast';
 import { LENSHUB_PROXY, RELAY_ON, SIGN_WALLET } from 'src/constants';
 import { useAppStore } from 'src/store/app';
@@ -59,18 +60,14 @@ const Follow: FC<Props> = ({ profile, showText = false, setFollowing }) => {
   const [createFollowTypedData, { loading: typedDataLoading }] = useMutation<Mutation>(
     CreateFollowTypedDataDocument,
     {
-      onCompleted: async ({
-        createFollowTypedData
-      }: {
-        createFollowTypedData: CreateFollowBroadcastItemResult;
-      }) => {
+      onCompleted: async ({ createFollowTypedData }) => {
         const { id, typedData } = createFollowTypedData;
-        const { deadline } = typedData?.value;
+        const { deadline } = typedData.value;
 
         try {
           const signature = await signTypedDataAsync(getSignature(typedData));
           setUserSigNonce(userSigNonce + 1);
-          const { profileIds, datas: followData } = typedData?.value;
+          const { profileIds, datas: followData } = typedData.value;
           const { v, r, s } = splitSignature(signature);
           const sig = { v, r, s, deadline };
           const inputStruct = {

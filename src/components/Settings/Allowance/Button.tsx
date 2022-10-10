@@ -3,12 +3,13 @@ import { Button } from '@components/UI/Button';
 import { Modal } from '@components/UI/Modal';
 import { Spinner } from '@components/UI/Spinner';
 import { WarningMessage } from '@components/UI/WarningMessage';
-import { GenerateModuleCurrencyApprovalDataDocument } from '@generated/documents';
+import { GenerateModuleCurrencyApprovalDataDocument } from '@generated/types';
 import { ExclamationIcon, MinusIcon, PlusIcon } from '@heroicons/react/outline';
 import { getModule } from '@lib/getModule';
 import { Mixpanel } from '@lib/mixpanel';
 import onError from '@lib/onError';
-import React, { Dispatch, FC, useState } from 'react';
+import type { Dispatch, FC } from 'react';
+import { useState } from 'react';
 import toast from 'react-hot-toast';
 import { usePrepareSendTransaction, useSendTransaction, useWaitForTransaction } from 'wagmi';
 
@@ -56,7 +57,7 @@ const AllowanceButton: FC<Props> = ({ title = 'Allow', module, allowed, setAllow
         request: {
           currency: currencies,
           value: value,
-          [getModule(module.module).type]: selectedModule
+          [getModule(module.module).field]: selectedModule
         }
       }
     }).then((res) => {

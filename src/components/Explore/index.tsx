@@ -2,12 +2,13 @@ import RecommendedProfiles from '@components/Home/RecommendedProfiles';
 import Trending from '@components/Home/Trending';
 import Footer from '@components/Shared/Footer';
 import { GridItemEight, GridItemFour, GridLayout } from '@components/UI/GridLayout';
-import Seo from '@components/utils/Seo';
+import MetaTags from '@components/utils/MetaTags';
 import { PublicationSortCriteria } from '@generated/types';
+import isFeatureEnabled from '@lib/isFeatureEnabled';
 import { Mixpanel } from '@lib/mixpanel';
-import { NextPage } from 'next';
+import type { NextPage } from 'next';
 import { useRouter } from 'next/router';
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { APP_NAME } from 'src/constants';
 import { useAppStore } from 'src/store/app';
 import { PAGEVIEW } from 'src/tracking';
@@ -32,7 +33,7 @@ const Explore: NextPage = () => {
 
   return (
     <GridLayout>
-      <Seo
+      <MetaTags
         title={`Explore • ${APP_NAME}`}
         description={`Explore top commented, collected and latest publications in the ${APP_NAME}.`}
       />
@@ -41,7 +42,7 @@ const Explore: NextPage = () => {
         <Feed feedType={feedType as PublicationSortCriteria} />
       </GridItemEight>
       <GridItemFour>
-        <Trending />
+        {isFeatureEnabled('trending-widget', currentProfile?.id) && <Trending />}
         {currentProfile ? <RecommendedProfiles /> : null}
         <Footer />
       </GridItemFour>

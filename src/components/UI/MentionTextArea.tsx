@@ -1,15 +1,16 @@
 import { useLazyQuery } from '@apollo/client';
 import Slug from '@components/Shared/Slug';
-import { SearchProfilesDocument } from '@generated/documents';
-import { UserSuggestion } from '@generated/lenstertypes';
-import { MediaSet, NftImage, Profile, SearchRequestTypes } from '@generated/types';
+import type { UserSuggestion } from '@generated/lenstertypes';
+import type { MediaSet, NftImage, Profile } from '@generated/types';
+import { SearchProfilesDocument, SearchRequestTypes } from '@generated/types';
 import { BadgeCheckIcon } from '@heroicons/react/solid';
 import getIPFSLink from '@lib/getIPFSLink';
 import getStampFyiURL from '@lib/getStampFyiURL';
 import imagekitURL from '@lib/imagekitURL';
 import isVerified from '@lib/isVerified';
 import clsx from 'clsx';
-import { Dispatch, FC } from 'react';
+import type { Dispatch, FC } from 'react';
+import { useEffect, useRef } from 'react';
 import { Mention, MentionsInput } from 'react-mentions';
 import { usePublicationStore } from 'src/store/publication';
 
@@ -43,12 +44,28 @@ interface Props {
   error: string;
   setError: Dispatch<string>;
   placeholder?: string;
+  hideBorder?: boolean;
+  autoFocus?: boolean;
 }
 
-export const MentionTextArea: FC<Props> = ({ error, setError, placeholder = '' }) => {
+export const MentionTextArea: FC<Props> = ({
+  error,
+  setError,
+  placeholder = '',
+  hideBorder = false,
+  autoFocus = false
+}) => {
   const publicationContent = usePublicationStore((state) => state.publicationContent);
   const setPublicationContent = usePublicationStore((state) => state.setPublicationContent);
   const [searchUsers] = useLazyQuery(SearchProfilesDocument);
+  const inputRef = useRef<HTMLTextAreaElement>(null);
+
+  useEffect(() => {
+    if (autoFocus && inputRef?.current) {
+      inputRef.current?.focus();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const fetchUsers = (query: string, callback: any) => {
     if (!query) {
@@ -75,9 +92,10 @@ export const MentionTextArea: FC<Props> = ({ error, setError, placeholder = '' }
   return (
     <div className="mb-2">
       <MentionsInput
-        className="mention-input"
+        className={clsx(hideBorder ? 'mention-input-borderless' : 'mention-input')}
         value={publicationContent}
         placeholder={placeholder}
+        inputRef={inputRef}
         onChange={(e) => {
           setPublicationContent(e.target.value);
           setError('');

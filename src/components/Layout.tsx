@@ -1,16 +1,18 @@
 import { useQuery } from '@apollo/client';
-import { UserProfilesDocument } from '@generated/documents';
-import { Profile } from '@generated/types';
+import type { Profile } from '@generated/types';
+import { ReferenceModules, UserProfilesDocument } from '@generated/types';
 import getIsAuthTokensAvailable from '@lib/getIsAuthTokensAvailable';
 import getToastOptions from '@lib/getToastOptions';
 import resetAuthData from '@lib/resetAuthData';
 import mixpanel from 'mixpanel-browser';
 import Head from 'next/head';
 import { useTheme } from 'next-themes';
-import { FC, ReactNode, useEffect } from 'react';
+import type { FC, ReactNode } from 'react';
+import { useEffect } from 'react';
 import { Toaster } from 'react-hot-toast';
 import { CHAIN_ID, MIXPANEL_API_HOST, MIXPANEL_TOKEN } from 'src/constants';
 import { useAppPersistStore, useAppStore } from 'src/store/app';
+import { useReferenceModuleStore } from 'src/store/referencemodule';
 import { useAccount, useDisconnect, useNetwork } from 'wagmi';
 
 import Loading from './Loading';
@@ -38,6 +40,7 @@ const Layout: FC<Props> = ({ children }) => {
   const setCurrentProfile = useAppStore((state) => state.setCurrentProfile);
   const profileId = useAppPersistStore((state) => state.profileId);
   const setProfileId = useAppPersistStore((state) => state.setProfileId);
+  const setSelectedReferenceModule = useReferenceModuleStore((state) => state.setSelectedReferenceModule);
 
   const { mounted } = useIsMounted();
   const { address, isDisconnected } = useAccount();
@@ -54,17 +57,23 @@ const Layout: FC<Props> = ({ children }) => {
     variables: { ownedBy: address },
     skip: !profileId,
     onCompleted: (data) => {
-      const profiles: any = data?.profiles?.items
+      const profiles = data?.profiles?.items
         ?.slice()
         ?.sort((a, b) => Number(a.id) - Number(b.id))
-        ?.sort((a, b) => (!(a.isDefault !== b.isDefault) ? 0 : a.isDefault ? -1 : 1));
+        ?.sort((a, b) => (a.isDefault === b.isDefault ? 0 : a.isDefault ? -1 : 1));
 
       if (!profiles.length) {
         return resetAuthState();
       }
 
-      const selectedUser = profiles.find((profile: any) => profile.id === profileId);
-      setProfiles(profiles);
+      const selectedUser = profiles.find((profile) => profile.id === profileId);
+      const totalFollowing = selectedUser?.stats?.totalFollowing || 0;
+      setSelectedReferenceModule(
+        totalFollowing > 20
+          ? ReferenceModules.DegreesOfSeparationReferenceModule
+          : ReferenceModules.FollowerOnlyReferenceModule
+      );
+      setProfiles(profiles as Profile[]);
       setCurrentProfile(selectedUser as Profile);
       setUserSigNonce(data?.userSigNonces?.lensHubOnChainSigNonce);
     }

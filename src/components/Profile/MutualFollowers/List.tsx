@@ -3,9 +3,10 @@ import Loader from '@components/Shared/Loader';
 import UserProfile from '@components/Shared/UserProfile';
 import { ErrorMessage } from '@components/UI/ErrorMessage';
 import { Spinner } from '@components/UI/Spinner';
-import { MutualFollowersListDocument } from '@generated/documents';
+import type { Profile } from '@generated/types';
+import { MutualFollowersListDocument } from '@generated/types';
 import { Mixpanel } from '@lib/mixpanel';
-import { FC } from 'react';
+import type { FC } from 'react';
 import { useInView } from 'react-cool-inview';
 import { PAGINATION_ROOT_MARGIN } from 'src/constants';
 import { useAppStore } from 'src/store/app';
@@ -56,9 +57,14 @@ const MutualFollowersList: FC<Props> = ({ profileId }) => {
       <ErrorMessage className="m-5" title="Failed to load mutual followers" error={error} />
       <div className="space-y-3">
         <div className="divide-y dark:divide-gray-700">
-          {profiles?.map((profile: any) => (
+          {profiles?.map((profile) => (
             <div className="p-5" key={profile?.id}>
-              <UserProfile profile={profile} showBio showFollow isFollowing={profile?.isFollowedByMe} />
+              <UserProfile
+                profile={profile as Profile}
+                showBio
+                showFollow
+                isFollowing={profile?.isFollowedByMe}
+              />
             </div>
           ))}
         </div>

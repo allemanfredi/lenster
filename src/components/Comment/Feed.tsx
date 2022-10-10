@@ -6,20 +6,19 @@ import { Card } from '@components/UI/Card';
 import { EmptyState } from '@components/UI/EmptyState';
 import { ErrorMessage } from '@components/UI/ErrorMessage';
 import { Spinner } from '@components/UI/Spinner';
-import { CommentFeedDocument } from '@generated/documents';
-import { LensterPublication } from '@generated/lenstertypes';
-import { CustomFiltersTypes } from '@generated/types';
+import type { LensterPublication } from '@generated/lenstertypes';
+import { CommentFeedDocument, CustomFiltersTypes } from '@generated/types';
 import { CollectionIcon } from '@heroicons/react/outline';
 import { Mixpanel } from '@lib/mixpanel';
-import React, { FC } from 'react';
+import type { FC } from 'react';
 import { useInView } from 'react-cool-inview';
 import { PAGINATION_ROOT_MARGIN } from 'src/constants';
 import { useAppStore } from 'src/store/app';
 import { useTransactionPersistStore } from 'src/store/transaction';
 import { PAGINATION } from 'src/tracking';
 
+import NewComment from '../Composer/Comment/New';
 import CommentWarning from '../Shared/CommentWarning';
-import NewComment from './New';
 
 interface Props {
   publication: LensterPublication;
@@ -84,8 +83,12 @@ const Feed: FC<Props> = ({ publication }) => {
                   </div>
                 )
             )}
-            {comments?.map((comment: any, index: number) => (
-              <SinglePublication key={`${publicationId}_${index}`} publication={comment} showType={false} />
+            {comments?.map((comment, index: number) => (
+              <SinglePublication
+                key={`${publicationId}_${index}`}
+                publication={comment as LensterPublication}
+                showType={false}
+              />
             ))}
           </Card>
           {pageInfo?.next && comments?.length !== pageInfo.totalCount && (

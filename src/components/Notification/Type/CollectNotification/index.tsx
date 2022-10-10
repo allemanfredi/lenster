@@ -3,13 +3,12 @@ import {
   NotificationWalletProfileAvatar,
   NotificationWalletProfileName
 } from '@components/Notification/WalletProfile';
-import { LensterNotification } from '@generated/lenstertypes';
-import { NewCollectNotification } from '@generated/types';
+import type { NewCollectNotification } from '@generated/types';
 import { CollectionIcon } from '@heroicons/react/solid';
 import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
 import Link from 'next/link';
-import React, { FC } from 'react';
+import type { FC } from 'react';
 
 import CollectedAmount from './Amount';
 import CollectedContent from './Content';
@@ -17,7 +16,7 @@ import CollectedContent from './Content';
 dayjs.extend(relativeTime);
 
 interface Props {
-  notification: NewCollectNotification & LensterNotification;
+  notification: NewCollectNotification;
 }
 
 const CollectNotification: FC<Props> = ({ notification }) => {

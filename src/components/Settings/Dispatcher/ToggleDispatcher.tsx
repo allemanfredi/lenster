@@ -4,15 +4,15 @@ import IndexStatus from '@components/Shared/IndexStatus';
 import { Button } from '@components/UI/Button';
 import { Spinner } from '@components/UI/Spinner';
 import useBroadcast from '@components/utils/hooks/useBroadcast';
-import { CreateSetDispatcherTypedDataDocument } from '@generated/documents';
-import { CreateSetDispatcherBroadcastItemResult, Mutation } from '@generated/types';
+import type { Mutation } from '@generated/types';
+import { CreateSetDispatcherTypedDataDocument } from '@generated/types';
 import { CheckCircleIcon, XIcon } from '@heroicons/react/outline';
 import getSignature from '@lib/getSignature';
 import { Mixpanel } from '@lib/mixpanel';
 import onError from '@lib/onError';
 import splitSignature from '@lib/splitSignature';
 import clsx from 'clsx';
-import { FC } from 'react';
+import type { FC } from 'react';
 import toast from 'react-hot-toast';
 import { LENSHUB_PROXY, RELAY_ON } from 'src/constants';
 import { useAppStore } from 'src/store/app';
@@ -53,14 +53,10 @@ const ToggleDispatcher: FC<Props> = ({ buttonSize = 'md' }) => {
   const [createSetProfileMetadataTypedData, { loading: typedDataLoading }] = useMutation<Mutation>(
     CreateSetDispatcherTypedDataDocument,
     {
-      onCompleted: async ({
-        createSetDispatcherTypedData
-      }: {
-        createSetDispatcherTypedData: CreateSetDispatcherBroadcastItemResult;
-      }) => {
+      onCompleted: async ({ createSetDispatcherTypedData }) => {
         try {
           const { id, typedData } = createSetDispatcherTypedData;
-          const { profileId, dispatcher, deadline } = typedData?.value;
+          const { profileId, dispatcher, deadline } = typedData.value;
           const signature = await signTypedDataAsync(getSignature(typedData));
           const { v, r, s } = splitSignature(signature);
           const sig = { v, r, s, deadline };

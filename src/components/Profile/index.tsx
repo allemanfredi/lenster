@@ -1,11 +1,11 @@
 import { useQuery } from '@apollo/client';
 import { GridItemEight, GridItemFour, GridLayout } from '@components/UI/GridLayout';
-import Seo from '@components/utils/Seo';
-import { ProfileDocument } from '@generated/documents';
+import MetaTags from '@components/utils/MetaTags';
+import { ProfileDocument } from '@generated/types';
 import { Mixpanel } from '@lib/mixpanel';
-import { NextPage } from 'next';
+import type { NextPage } from 'next';
 import { useRouter } from 'next/router';
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { APP_NAME, STATIC_ASSETS } from 'src/constants';
 import Custom404 from 'src/pages/404';
 import Custom500 from 'src/pages/500';
@@ -30,14 +30,19 @@ const ViewProfile: NextPage = () => {
       : 'FEED'
   );
 
-  useEffect(() => {
-    Mixpanel.track('Pageview', { path: PAGEVIEW.PROFILE });
-  }, []);
-
   const { data, loading, error } = useQuery(ProfileDocument, {
     variables: { request: { handle: username }, who: currentProfile?.id ?? null },
     skip: !username
   });
+
+  useEffect(() => {
+    if (data?.profile?.id) {
+      Mixpanel.track('Pageview', {
+        path: PAGEVIEW.PROFILE,
+        id: data.profile.id
+      });
+    }
+  }, [data]);
 
   if (error) {
     return <Custom500 />;
@@ -56,9 +61,9 @@ const ViewProfile: NextPage = () => {
   return (
     <>
       {profile?.name ? (
-        <Seo title={`${profile?.name} (@${profile?.handle}) • ${APP_NAME}`} />
+        <MetaTags title={`${profile?.name} (@${profile?.handle}) • ${APP_NAME}`} />
       ) : (
-        <Seo title={`@${profile?.handle} • ${APP_NAME}`} />
+        <MetaTags title={`@${profile?.handle} • ${APP_NAME}`} />
       )}
       <Cover
         cover={

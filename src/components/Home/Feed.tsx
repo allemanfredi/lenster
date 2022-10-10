@@ -6,10 +6,11 @@ import { Card } from '@components/UI/Card';
 import { EmptyState } from '@components/UI/EmptyState';
 import { ErrorMessage } from '@components/UI/ErrorMessage';
 import { Spinner } from '@components/UI/Spinner';
-import { HomeFeedDocument } from '@generated/documents';
+import type { LensterPublication } from '@generated/lenstertypes';
+import { HomeFeedDocument } from '@generated/types';
 import { CollectionIcon } from '@heroicons/react/outline';
 import { Mixpanel } from '@lib/mixpanel';
-import React, { FC } from 'react';
+import type { FC } from 'react';
 import { useInView } from 'react-cool-inview';
 import { PAGINATION_ROOT_MARGIN } from 'src/constants';
 import { useAppStore } from 'src/store/app';
@@ -46,37 +47,45 @@ const Feed: FC = () => {
     rootMargin: PAGINATION_ROOT_MARGIN
   });
 
+  if (loading) {
+    return <PublicationsShimmer />;
+  }
+
+  if (publications?.length === 0) {
+    return (
+      <EmptyState
+        message={<div>No posts yet!</div>}
+        icon={<CollectionIcon className="w-8 h-8 text-brand" />}
+      />
+    );
+  }
+
+  if (error) {
+    return <ErrorMessage title="Failed to load home feed" error={error} />;
+  }
+
   return (
     <>
-      {loading && <PublicationsShimmer />}
-      {publications?.length === 0 && (
-        <EmptyState
-          message={<div>No posts yet!</div>}
-          icon={<CollectionIcon className="w-8 h-8 text-brand" />}
-        />
-      )}
-      <ErrorMessage title="Failed to load home feed" error={error} />
-      {!error && !loading && publications?.length !== 0 && (
-        <>
-          <Card className="divide-y-[1px] dark:divide-gray-700/80">
-            {txnQueue.map(
-              (txn) =>
-                txn?.type === 'NEW_POST' && (
-                  <div key={txn.id}>
-                    <QueuedPublication txn={txn} />
-                  </div>
-                )
-            )}
-            {publications?.map((post: any, index: number) => (
-              <SinglePublication key={`${post?.id}_${index}`} publication={post} />
-            ))}
-          </Card>
-          {pageInfo?.next && publications?.length !== pageInfo.totalCount && (
-            <span ref={observe} className="flex justify-center p-5">
-              <Spinner size="sm" />
-            </span>
-          )}
-        </>
+      <Card className="divide-y-[1px] dark:divide-gray-700/80">
+        {txnQueue.map(
+          (txn) =>
+            txn?.type === 'NEW_POST' && (
+              <div key={txn.id}>
+                <QueuedPublication txn={txn} />
+              </div>
+            )
+        )}
+        {publications?.map((publication, index: number) => (
+          <SinglePublication
+            key={`${publication?.id}_${index}`}
+            publication={publication as LensterPublication}
+          />
+        ))}
+      </Card>
+      {pageInfo?.next && publications?.length !== pageInfo.totalCount && (
+        <span ref={observe} className="flex justify-center p-5">
+          <Spinner size="sm" />
+        </span>
       )}
     </>
   );

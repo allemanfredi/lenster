@@ -1,17 +1,17 @@
 import { useMutation } from '@apollo/client';
 import { Button } from '@components/UI/Button';
-import { CardBody } from '@components/UI/Card';
 import { EmptyState } from '@components/UI/EmptyState';
 import { ErrorMessage } from '@components/UI/ErrorMessage';
 import { Form, useZodForm } from '@components/UI/Form';
 import { Spinner } from '@components/UI/Spinner';
 import { TextArea } from '@components/UI/TextArea';
-import { ReportPublicationDocument } from '@generated/documents';
-import { LensterPublication } from '@generated/lenstertypes';
+import type { LensterPublication } from '@generated/lenstertypes';
+import { ReportPublicationDocument } from '@generated/types';
 import { PencilAltIcon } from '@heroicons/react/outline';
 import { CheckCircleIcon } from '@heroicons/react/solid';
 import { Mixpanel } from '@lib/mixpanel';
-import React, { FC, useState } from 'react';
+import type { FC } from 'react';
+import { useState } from 'react';
 import { useGlobalModalStateStore } from 'src/store/modals';
 import { PUBLICATION } from 'src/tracking';
 import { object, string } from 'zod';
@@ -72,7 +72,7 @@ const Report: FC<Props> = ({ publication }) => {
           hideCard
         />
       ) : publication ? (
-        <CardBody>
+        <div className="p-5">
           <Form
             form={form}
             className="space-y-4"
@@ -101,7 +101,7 @@ const Report: FC<Props> = ({ publication }) => {
               </>
             )}
           </Form>
-        </CardBody>
+        </div>
       ) : null}
     </div>
   );

@@ -1,9 +1,9 @@
 import SuperFollow from '@components/Settings/Account/SuperFollow';
 import { GridItemEight, GridItemFour, GridLayout } from '@components/UI/GridLayout';
-import Seo from '@components/utils/Seo';
+import MetaTags from '@components/utils/MetaTags';
 import { Mixpanel } from '@lib/mixpanel';
-import { NextPage } from 'next';
-import React, { useEffect } from 'react';
+import type { NextPage } from 'next';
+import { useEffect } from 'react';
 import { APP_NAME } from 'src/constants';
 import Custom404 from 'src/pages/404';
 import { useAppStore } from 'src/store/app';
@@ -27,7 +27,7 @@ const AccountSettings: NextPage = () => {
 
   return (
     <GridLayout>
-      <Seo title={`Account settings • ${APP_NAME}`} />
+      <MetaTags title={`Account settings • ${APP_NAME}`} />
       <GridItemFour>
         <Sidebar />
       </GridItemFour>

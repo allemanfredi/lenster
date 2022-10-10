@@ -5,11 +5,12 @@ import { Card } from '@components/UI/Card';
 import { EmptyState } from '@components/UI/EmptyState';
 import { ErrorMessage } from '@components/UI/ErrorMessage';
 import { Spinner } from '@components/UI/Spinner';
-import { ProfileFeedDocument } from '@generated/documents';
-import { Profile, PublicationMainFocus, PublicationTypes } from '@generated/types';
+import type { LensterPublication } from '@generated/lenstertypes';
+import type { Profile } from '@generated/types';
+import { ProfileFeedDocument, PublicationMainFocus, PublicationTypes } from '@generated/types';
 import { CollectionIcon } from '@heroicons/react/outline';
 import { Mixpanel } from '@lib/mixpanel';
-import React, { FC } from 'react';
+import type { FC } from 'react';
 import { useInView } from 'react-cool-inview';
 import { PAGINATION_ROOT_MARGIN } from 'src/constants';
 import { useAppStore } from 'src/store/app';
@@ -66,38 +67,43 @@ const Feed: FC<Props> = ({ profile, type }) => {
     rootMargin: PAGINATION_ROOT_MARGIN
   });
 
+  if (loading) {
+    return <PublicationsShimmer />;
+  }
+
+  if (publications?.length === 0) {
+    return (
+      <EmptyState
+        message={
+          <div>
+            <span className="mr-1 font-bold">@{profile?.handle}</span>
+            <span>doesn’t {type.toLowerCase()}ed yet!</span>
+          </div>
+        }
+        icon={<CollectionIcon className="w-8 h-8 text-brand" />}
+      />
+    );
+  }
+
+  if (error) {
+    return <ErrorMessage title="Failed to load profile feed" error={error} />;
+  }
+
   return (
     <>
-      {loading && <PublicationsShimmer />}
-      {publications?.length === 0 && (
-        <EmptyState
-          message={
-            <div>
-              <span className="mr-1 font-bold">@{profile?.handle}</span>
-              <span>doesn’t {type.toLowerCase()}ed yet!</span>
-            </div>
-          }
-          icon={<CollectionIcon className="w-8 h-8 text-brand" />}
-        />
-      )}
-      <ErrorMessage title="Failed to load profile feed" error={error} />
-      {!error && !loading && publications?.length !== 0 && (
-        <>
-          <Card className="divide-y-[1px] dark:divide-gray-700/80">
-            {publications?.map((post: any, index: number) => (
-              <SinglePublication
-                key={`${post?.id}_${index}`}
-                publication={post}
-                showThread={type !== 'MEDIA'}
-              />
-            ))}
-          </Card>
-          {pageInfo?.next && publications?.length !== pageInfo.totalCount && (
-            <span ref={observe} className="flex justify-center p-5">
-              <Spinner size="sm" />
-            </span>
-          )}
-        </>
+      <Card className="divide-y-[1px] dark:divide-gray-700/80">
+        {publications?.map((publication, index: number) => (
+          <SinglePublication
+            key={`${publication.id}_${index}`}
+            publication={publication as LensterPublication}
+            showThread={type !== 'MEDIA'}
+          />
+        ))}
+      </Card>
+      {pageInfo?.next && publications?.length !== pageInfo.totalCount && (
+        <span ref={observe} className="flex justify-center p-5">
+          <Spinner size="sm" />
+        </span>
       )}
     </>
   );

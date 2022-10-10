@@ -1,5 +1,4 @@
-/* eslint-disable no-unused-vars */
-import { Profile } from '@generated/types';
+import type { Profile } from '@generated/types';
 import create from 'zustand';
 import { persist } from 'zustand/middleware';
 

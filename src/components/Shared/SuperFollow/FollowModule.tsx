@@ -5,13 +5,14 @@ import { Button } from '@components/UI/Button';
 import { Spinner } from '@components/UI/Spinner';
 import { WarningMessage } from '@components/UI/WarningMessage';
 import useBroadcast from '@components/utils/hooks/useBroadcast';
+import type { LensterFollowModule } from '@generated/lenstertypes';
+import type { Mutation, Profile } from '@generated/types';
 import {
   ApprovedModuleAllowanceAmountDocument,
   CreateFollowTypedDataDocument,
+  FollowModules,
   SuperFollowDocument
-} from '@generated/documents';
-import { LensterFollowModule } from '@generated/lenstertypes';
-import { CreateFollowBroadcastItemResult, FollowModules, Mutation, Profile } from '@generated/types';
+} from '@generated/types';
 import { StarIcon, UserIcon } from '@heroicons/react/outline';
 import formatAddress from '@lib/formatAddress';
 import getSignature from '@lib/getSignature';
@@ -19,7 +20,8 @@ import getTokenImage from '@lib/getTokenImage';
 import { Mixpanel } from '@lib/mixpanel';
 import onError from '@lib/onError';
 import splitSignature from '@lib/splitSignature';
-import { Dispatch, FC, useState } from 'react';
+import type { Dispatch, FC } from 'react';
+import { useState } from 'react';
 import toast from 'react-hot-toast';
 import { LENSHUB_PROXY, POLYGONSCAN_URL, RELAY_ON, SIGN_WALLET } from 'src/constants';
 import { useAppStore } from 'src/store/app';
@@ -101,14 +103,10 @@ const FollowModule: FC<Props> = ({ profile, setFollowing, setShowFollowModal, ag
   const [createFollowTypedData, { loading: typedDataLoading }] = useMutation<Mutation>(
     CreateFollowTypedDataDocument,
     {
-      onCompleted: async ({
-        createFollowTypedData
-      }: {
-        createFollowTypedData: CreateFollowBroadcastItemResult;
-      }) => {
+      onCompleted: async ({ createFollowTypedData }) => {
         try {
           const { id, typedData } = createFollowTypedData;
-          const { profileIds, datas: followData, deadline } = typedData?.value;
+          const { profileIds, datas: followData, deadline } = typedData.value;
           const signature = await signTypedDataAsync(getSignature(typedData));
           const { v, r, s } = splitSignature(signature);
           const sig = { v, r, s, deadline };

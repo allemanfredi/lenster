@@ -3,7 +3,7 @@ import { ChatAlt2Icon, CollectionIcon, SparklesIcon, SwitchHorizontalIcon } from
 import { Mixpanel } from '@lib/mixpanel';
 import clsx from 'clsx';
 import { useRouter } from 'next/router';
-import React, { Dispatch, FC, ReactNode } from 'react';
+import type { Dispatch, FC, ReactNode } from 'react';
 
 interface Props {
   setFeedType: Dispatch<string>;
@@ -36,7 +36,7 @@ const FeedType: FC<Props> = ({ setFeedType, feedType }) => {
       aria-label={name}
     >
       {icon}
-      <div className="hidden sm:block">{name}</div>
+      <span className="hidden sm:block">{name}</span>
     </button>
   );
 

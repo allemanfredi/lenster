@@ -7,18 +7,19 @@ import { Form, useZodForm } from '@components/UI/Form';
 import { Input } from '@components/UI/Input';
 import { Spinner } from '@components/UI/Spinner';
 import useBroadcast from '@components/utils/hooks/useBroadcast';
+import type { Erc20, Mutation } from '@generated/types';
 import {
   CreateSetFollowModuleTypedDataDocument,
   EnabledCurrencyModulesWithProfileDocument
-} from '@generated/documents';
-import { CreateSetFollowModuleBroadcastItemResult, Erc20, Mutation } from '@generated/types';
+} from '@generated/types';
 import { StarIcon, XIcon } from '@heroicons/react/outline';
 import getSignature from '@lib/getSignature';
 import getTokenImage from '@lib/getTokenImage';
 import { Mixpanel } from '@lib/mixpanel';
 import onError from '@lib/onError';
 import splitSignature from '@lib/splitSignature';
-import React, { FC, useState } from 'react';
+import type { FC } from 'react';
+import { useState } from 'react';
 import toast from 'react-hot-toast';
 import { ADDRESS_REGEX, DEFAULT_COLLECT_TOKEN, LENSHUB_PROXY, RELAY_ON, SIGN_WALLET } from 'src/constants';
 import { useAppStore } from 'src/store/app';
@@ -73,14 +74,10 @@ const SuperFollow: FC = () => {
   const [createSetFollowModuleTypedData, { loading: typedDataLoading }] = useMutation<Mutation>(
     CreateSetFollowModuleTypedDataDocument,
     {
-      onCompleted: async ({
-        createSetFollowModuleTypedData
-      }: {
-        createSetFollowModuleTypedData: CreateSetFollowModuleBroadcastItemResult;
-      }) => {
+      onCompleted: async ({ createSetFollowModuleTypedData }) => {
         try {
           const { id, typedData } = createSetFollowModuleTypedData;
-          const { profileId, followModule, followModuleInitData, deadline } = typedData?.value;
+          const { profileId, followModule, followModuleInitData, deadline } = typedData.value;
           const signature = await signTypedDataAsync(getSignature(typedData));
           const { v, r, s } = splitSignature(signature);
           const sig = { v, r, s, deadline };

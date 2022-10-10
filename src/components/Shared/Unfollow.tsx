@@ -2,15 +2,17 @@ import { FollowNFT } from '@abis/FollowNFT';
 import { useMutation } from '@apollo/client';
 import { Button } from '@components/UI/Button';
 import { Spinner } from '@components/UI/Spinner';
-import { CreateUnfollowTypedDataDocument } from '@generated/documents';
-import { CreateUnfollowBroadcastItemResult, Mutation, Profile } from '@generated/types';
+import type { Mutation, Profile } from '@generated/types';
+import { CreateUnfollowTypedDataDocument } from '@generated/types';
 import { UserRemoveIcon } from '@heroicons/react/outline';
 import getSignature from '@lib/getSignature';
 import { Mixpanel } from '@lib/mixpanel';
 import onError from '@lib/onError';
 import splitSignature from '@lib/splitSignature';
-import { Contract, Signer } from 'ethers';
-import { Dispatch, FC, useState } from 'react';
+import type { Signer } from 'ethers';
+import { Contract } from 'ethers';
+import type { Dispatch, FC } from 'react';
+import { useState } from 'react';
 import toast from 'react-hot-toast';
 import { SIGN_WALLET } from 'src/constants';
 import { useAppStore } from 'src/store/app';
@@ -32,14 +34,10 @@ const Unfollow: FC<Props> = ({ profile, showText = false, setFollowing }) => {
   const [createUnfollowTypedData, { loading: typedDataLoading }] = useMutation<Mutation>(
     CreateUnfollowTypedDataDocument,
     {
-      onCompleted: async ({
-        createUnfollowTypedData
-      }: {
-        createUnfollowTypedData: CreateUnfollowBroadcastItemResult;
-      }) => {
+      onCompleted: async ({ createUnfollowTypedData }) => {
         try {
           const { typedData } = createUnfollowTypedData;
-          const { tokenId, deadline } = typedData?.value;
+          const { tokenId, deadline } = typedData.value;
           const signature = await signTypedDataAsync(getSignature(typedData));
           const { v, r, s } = splitSignature(signature);
           const sig = { v, r, s, deadline };

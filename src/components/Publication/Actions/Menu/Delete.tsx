@@ -1,13 +1,13 @@
 import { useMutation } from '@apollo/client';
-import { HidePublicationDocument } from '@generated/documents';
-import { LensterPublication } from '@generated/lenstertypes';
-import { Mutation } from '@generated/types';
+import type { LensterPublication } from '@generated/lenstertypes';
+import type { Mutation } from '@generated/types';
+import { HidePublicationDocument } from '@generated/types';
 import { Menu } from '@headlessui/react';
 import { TrashIcon } from '@heroicons/react/outline';
 import { Mixpanel } from '@lib/mixpanel';
 import clsx from 'clsx';
 import { useRouter } from 'next/router';
-import React, { FC } from 'react';
+import type { FC } from 'react';
 import { PUBLICATION } from 'src/tracking';
 
 interface Props {

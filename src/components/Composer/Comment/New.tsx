@@ -9,26 +9,27 @@ import { ErrorMessage } from '@components/UI/ErrorMessage';
 import { MentionTextArea } from '@components/UI/MentionTextArea';
 import { Spinner } from '@components/UI/Spinner';
 import useBroadcast from '@components/utils/hooks/useBroadcast';
-import { CreateCommentTypedDataDocument, CreateCommentViaDispatcherDocument } from '@generated/documents';
-import { LensterAttachment, LensterPublication } from '@generated/lenstertypes';
+import type { LensterAttachment, LensterPublication } from '@generated/lenstertypes';
+import type { Mutation } from '@generated/types';
 import {
-  CreateCommentBroadcastItemResult,
-  Mutation,
+  CreateCommentTypedDataDocument,
+  CreateCommentViaDispatcherDocument,
   PublicationMainFocus,
   ReferenceModules
 } from '@generated/types';
-import { IGif } from '@giphy/js-types';
+import type { IGif } from '@giphy/js-types';
 import { ChatAlt2Icon } from '@heroicons/react/outline';
-import { defaultFeeData, defaultModuleData, getModule } from '@lib/getModule';
 import getSignature from '@lib/getSignature';
 import getTags from '@lib/getTags';
+import getUserLocale from '@lib/getUserLocale';
 import { Mixpanel } from '@lib/mixpanel';
 import onError from '@lib/onError';
 import splitSignature from '@lib/splitSignature';
 import trimify from '@lib/trimify';
 import uploadToArweave from '@lib/uploadToArweave';
 import dynamic from 'next/dynamic';
-import { FC, useState } from 'react';
+import type { FC } from 'react';
+import { useState } from 'react';
 import toast from 'react-hot-toast';
 import { APP_NAME, LENSHUB_PROXY, RELAY_ON, SIGN_WALLET } from 'src/constants';
 import { useAppStore } from 'src/store/app';
@@ -40,41 +41,49 @@ import { COMMENT } from 'src/tracking';
 import { v4 as uuid } from 'uuid';
 import { useContractWrite, useSignTypedData } from 'wagmi';
 
-const Attachment = dynamic(() => import('../Shared/Attachment'), {
+const Attachment = dynamic(() => import('@components/Shared/Attachment'), {
   loading: () => <div className="mb-1 w-5 h-5 rounded-lg shimmer" />
 });
-const Giphy = dynamic(() => import('../Shared/Giphy'), {
+const Giphy = dynamic(() => import('@components/Shared/Giphy'), {
   loading: () => <div className="mb-1 w-5 h-5 rounded-lg shimmer" />
 });
-const SelectCollectModule = dynamic(() => import('../Shared/SelectCollectModule'), {
+const CollectSettings = dynamic(() => import('@components/Shared/CollectSettings'), {
   loading: () => <div className="mb-1 w-5 h-5 rounded-lg shimmer" />
 });
-const SelectReferenceModule = dynamic(() => import('../Shared/SelectReferenceModule'), {
+const ReferenceSettings = dynamic(() => import('@components/Shared/ReferenceSettings'), {
   loading: () => <div className="mb-1 w-5 h-5 rounded-lg shimmer" />
 });
 
 interface Props {
-  hideCard?: boolean;
   publication: LensterPublication;
 }
 
-const NewComment: FC<Props> = ({ hideCard = false, publication }) => {
+const NewComment: FC<Props> = ({ publication }) => {
+  // App store
   const userSigNonce = useAppStore((state) => state.userSigNonce);
   const setUserSigNonce = useAppStore((state) => state.setUserSigNonce);
   const currentProfile = useAppStore((state) => state.currentProfile);
+
+  // Publication store
   const publicationContent = usePublicationStore((state) => state.publicationContent);
   const setPublicationContent = usePublicationStore((state) => state.setPublicationContent);
   const previewPublication = usePublicationStore((state) => state.previewPublication);
   const setPreviewPublication = usePublicationStore((state) => state.setPreviewPublication);
+
+  // Transaction persist store
   const txnQueue = useTransactionPersistStore((state) => state.txnQueue);
   const setTxnQueue = useTransactionPersistStore((state) => state.setTxnQueue);
-  const selectedCollectModule = useCollectModuleStore((state) => state.selectedCollectModule);
-  const setSelectedCollectModule = useCollectModuleStore((state) => state.setSelectedCollectModule);
-  const feeData = useCollectModuleStore((state) => state.feeData);
-  const setFeeData = useCollectModuleStore((state) => state.setFeeData);
+
+  // Collect module store
+  const payload = useCollectModuleStore((state) => state.payload);
+  const resetCollectSettings = useCollectModuleStore((state) => state.reset);
+
+  // Reference module store
   const selectedReferenceModule = useReferenceModuleStore((state) => state.selectedReferenceModule);
   const onlyFollowers = useReferenceModuleStore((state) => state.onlyFollowers);
-  const { commentsRestricted, mirrorsRestricted, degreesOfSeparation } = useReferenceModuleStore();
+  const degreesOfSeparation = useReferenceModuleStore((state) => state.degreesOfSeparation);
+
+  // States
   const [commentContentError, setCommentContentError] = useState('');
   const [isUploading, setIsUploading] = useState(false);
   const [attachments, setAttachments] = useState<LensterAttachment[]>([]);
@@ -83,8 +92,7 @@ const NewComment: FC<Props> = ({ hideCard = false, publication }) => {
     setPreviewPublication(false);
     setPublicationContent('');
     setAttachments([]);
-    setSelectedCollectModule(defaultModuleData);
-    setFeeData(defaultFeeData);
+    resetCollectSettings();
     Mixpanel.track(COMMENT.NEW);
   };
 
@@ -126,11 +134,7 @@ const NewComment: FC<Props> = ({ hideCard = false, publication }) => {
   const [createCommentTypedData, { loading: typedDataLoading }] = useMutation<Mutation>(
     CreateCommentTypedDataDocument,
     {
-      onCompleted: async ({
-        createCommentTypedData
-      }: {
-        createCommentTypedData: CreateCommentBroadcastItemResult;
-      }) => {
+      onCompleted: async ({ createCommentTypedData }) => {
         try {
           const { id, typedData } = createCommentTypedData;
           const {
@@ -144,7 +148,7 @@ const NewComment: FC<Props> = ({ hideCard = false, publication }) => {
             referenceModuleData,
             referenceModuleInitData,
             deadline
-          } = typedData?.value;
+          } = typedData.value;
           const signature = await signTypedDataAsync(getSignature(typedData));
           const { v, r, s } = splitSignature(signature);
           const sig = { v, r, s, deadline };
@@ -202,7 +206,6 @@ const NewComment: FC<Props> = ({ hideCard = false, publication }) => {
 
     setCommentContentError('');
     setIsUploading(true);
-    // TODO: Add animated_url support
     const id = await uploadToArweave({
       version: '2.0.0',
       metadata_id: uuid(),
@@ -221,7 +224,7 @@ const NewComment: FC<Props> = ({ hideCard = false, publication }) => {
           : PublicationMainFocus.TextOnly,
       contentWarning: null,
       media: attachments,
-      locale: 'en',
+      locale: getUserLocale(),
       createdOn: new Date(),
       appId: APP_NAME
     }).finally(() => setIsUploading(false));
@@ -230,16 +233,14 @@ const NewComment: FC<Props> = ({ hideCard = false, publication }) => {
       profileId: currentProfile?.id,
       publicationId: publication.__typename === 'Mirror' ? publication?.mirrorOf?.id : publication?.id,
       contentURI: `https://arweave.net/${id}`,
-      collectModule: feeData.recipient
-        ? { [getModule(selectedCollectModule.moduleName).config]: feeData }
-        : getModule(selectedCollectModule.moduleName).config,
+      collectModule: payload,
       referenceModule:
         selectedReferenceModule === ReferenceModules.FollowerOnlyReferenceModule
           ? { followerOnlyReferenceModule: onlyFollowers ? true : false }
           : {
               degreesOfSeparationReferenceModule: {
-                commentsRestricted,
-                mirrorsRestricted,
+                commentsRestricted: true,
+                mirrorsRestricted: true,
                 degreesOfSeparation
               }
             }
@@ -261,7 +262,7 @@ const NewComment: FC<Props> = ({ hideCard = false, publication }) => {
     const attachment = {
       item: gif.images.original.url,
       type: 'image/gif',
-      altTag: ''
+      altTag: gif.title
     };
     setAttachments([...attachments, attachment]);
   };
@@ -270,42 +271,38 @@ const NewComment: FC<Props> = ({ hideCard = false, publication }) => {
     isUploading || typedDataLoading || dispatcherLoading || signLoading || writeLoading || broadcastLoading;
 
   return (
-    <Card className={hideCard ? 'border-0 !shadow-none !bg-transparent' : ''}>
-      <div className="px-5 pt-5 pb-3">
-        <div className="space-y-1">
-          {error && <ErrorMessage className="mb-3" title="Transaction failed!" error={error} />}
-          {previewPublication ? (
-            <div className="pb-3 mb-2 border-b linkify dark:border-b-gray-700/80">
-              <Markup>{publicationContent}</Markup>
-            </div>
-          ) : (
-            <MentionTextArea
-              error={commentContentError}
-              setError={setCommentContentError}
-              placeholder="Tell something cool!"
-            />
-          )}
-          <div className="block items-center sm:flex">
-            <div className="flex items-center space-x-4">
-              <Attachment attachments={attachments} setAttachments={setAttachments} />
-              <Giphy setGifAttachment={(gif: IGif) => setGifAttachment(gif)} />
-              <SelectCollectModule />
-              <SelectReferenceModule />
-              {publicationContent && <Preview />}
-            </div>
-            <div className="ml-auto pt-2 sm:pt-0">
-              <Button
-                disabled={isLoading}
-                icon={isLoading ? <Spinner size="xs" /> : <ChatAlt2Icon className="w-4 h-4" />}
-                onClick={createComment}
-              >
-                Comment
-              </Button>
-            </div>
-          </div>
-          <Attachments attachments={attachments} setAttachments={setAttachments} isNew />
+    <Card className="px-5 pt-5 pb-3">
+      {error && <ErrorMessage className="mb-3" title="Transaction failed!" error={error} />}
+      {previewPublication ? (
+        <div className="pb-3 mb-2 border-b linkify dark:border-b-gray-700/80">
+          <Markup>{publicationContent}</Markup>
+        </div>
+      ) : (
+        <MentionTextArea
+          error={commentContentError}
+          setError={setCommentContentError}
+          placeholder="Tell something cool!"
+        />
+      )}
+      <div className="block items-center sm:flex">
+        <div className="flex items-center space-x-4">
+          <Attachment attachments={attachments} setAttachments={setAttachments} />
+          <Giphy setGifAttachment={(gif: IGif) => setGifAttachment(gif)} />
+          <CollectSettings />
+          <ReferenceSettings />
+          {publicationContent && <Preview />}
+        </div>
+        <div className="ml-auto pt-2 sm:pt-0">
+          <Button
+            disabled={isLoading}
+            icon={isLoading ? <Spinner size="xs" /> : <ChatAlt2Icon className="w-4 h-4" />}
+            onClick={createComment}
+          >
+            Comment
+          </Button>
         </div>
       </div>
+      <Attachments attachments={attachments} setAttachments={setAttachments} isNew />
     </Card>
   );
 };

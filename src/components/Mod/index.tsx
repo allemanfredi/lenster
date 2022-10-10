@@ -1,11 +1,11 @@
 import Footer from '@components/Shared/Footer';
-import { Card, CardBody } from '@components/UI/Card';
+import { Card } from '@components/UI/Card';
 import { GridItemEight, GridItemFour, GridLayout } from '@components/UI/GridLayout';
-import Seo from '@components/utils/Seo';
+import MetaTags from '@components/utils/MetaTags';
 import isGardener from '@lib/isGardener';
 import { Mixpanel } from '@lib/mixpanel';
-import { NextPage } from 'next';
-import React, { useEffect } from 'react';
+import type { NextPage } from 'next';
+import { useEffect } from 'react';
 import { APP_NAME } from 'src/constants';
 import Custom404 from 'src/pages/404';
 import { useAppStore } from 'src/store/app';
@@ -26,7 +26,7 @@ const Mod: NextPage = () => {
 
   return (
     <GridLayout>
-      <Seo
+      <MetaTags
         title={`Mod Center • ${APP_NAME}`}
         description={`Explore top commented, collected and latest publications in the ${APP_NAME}.`}
       />
@@ -34,9 +34,7 @@ const Mod: NextPage = () => {
         <Feed />
       </GridItemEight>
       <GridItemFour>
-        <Card>
-          <CardBody>TBD</CardBody>
-        </Card>
+        <Card className="p-5">TBD</Card>
         <Footer />
       </GridItemFour>
     </GridLayout>

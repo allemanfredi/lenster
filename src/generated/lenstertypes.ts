@@ -1,4 +1,4 @@
-import {
+import type {
   Comment,
   FeeCollectModuleSettings,
   FeeFollowModuleSettings,
@@ -6,9 +6,7 @@ import {
   LimitedFeeCollectModuleSettings,
   LimitedTimedFeeCollectModuleSettings,
   Mirror,
-  Notification,
   Post,
-  Profile,
   ProfileFollowModuleSettings,
   RevertCollectModuleSettings,
   RevertFollowModuleSettings,
@@ -16,7 +14,6 @@ import {
 } from './types';
 
 export type LensterPublication = Post & Mirror & Comment;
-export type LensterNotification = Notification & { profile: Profile };
 export type Community = Post;
 export type LensterCollectModule = FeeCollectModuleSettings &
   FreeCollectModuleSettings &
@@ -27,15 +24,19 @@ export type LensterCollectModule = FeeCollectModuleSettings &
 export type LensterFollowModule = FeeFollowModuleSettings &
   ProfileFollowModuleSettings &
   RevertFollowModuleSettings;
-export type LensterAttachment = { item: string; type: string; altTag: string };
-export type UserSuggestion = {
+export interface LensterAttachment {
+  item: string;
+  type: string;
+  altTag: string;
+}
+export interface UserSuggestion {
   uid: string;
   id: string;
   display: string;
   name: string;
   picture: string;
-};
-export type OG = {
+}
+export interface OG {
   title: string;
   description: string;
   site: string;
@@ -44,4 +45,4 @@ export type OG = {
   thumbnail: string;
   isSquare: boolean;
   html: string;
-};
+}

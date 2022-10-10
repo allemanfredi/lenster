@@ -1,5 +1,5 @@
 import Head from 'next/head';
-import React, { FC } from 'react';
+import type { FC } from 'react';
 import { APP_NAME, DEFAULT_OG, DESCRIPTION } from 'src/constants';
 
 interface Props {
@@ -7,7 +7,7 @@ interface Props {
   description?: string;
 }
 
-const Seo: FC<Props> = ({ title = APP_NAME, description = DESCRIPTION }) => {
+const MetaTags: FC<Props> = ({ title = APP_NAME, description = DESCRIPTION }) => {
   return (
     <Head>
       <title>{title}</title>
@@ -46,4 +46,4 @@ const Seo: FC<Props> = ({ title = APP_NAME, description = DESCRIPTION }) => {
   );
 };
 
-export default Seo;
+export default MetaTags;

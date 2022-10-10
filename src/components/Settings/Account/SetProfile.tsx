@@ -3,18 +3,19 @@ import { useMutation } from '@apollo/client';
 import IndexStatus from '@components/Shared/IndexStatus';
 import UserProfile from '@components/Shared/UserProfile';
 import { Button } from '@components/UI/Button';
-import { Card, CardBody } from '@components/UI/Card';
+import { Card } from '@components/UI/Card';
 import { ErrorMessage } from '@components/UI/ErrorMessage';
 import { Spinner } from '@components/UI/Spinner';
 import useBroadcast from '@components/utils/hooks/useBroadcast';
-import { CreateSetDefaultProfileTypedDataDocument } from '@generated/documents';
-import { Mutation, Profile, SetDefaultProfileBroadcastItemResult } from '@generated/types';
+import type { Mutation, Profile } from '@generated/types';
+import { CreateSetDefaultProfileTypedDataDocument } from '@generated/types';
 import { ExclamationIcon, PencilIcon } from '@heroicons/react/outline';
 import getSignature from '@lib/getSignature';
 import { Mixpanel } from '@lib/mixpanel';
 import onError from '@lib/onError';
 import splitSignature from '@lib/splitSignature';
-import React, { FC, useEffect, useState } from 'react';
+import type { FC } from 'react';
+import { useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
 import { APP_NAME, LENSHUB_PROXY, RELAY_ON, SIGN_WALLET } from 'src/constants';
 import Custom404 from 'src/pages/404';
@@ -52,7 +53,7 @@ const SetProfile: FC = () => {
 
   const hasDefaultProfile = !!profiles.find((o) => o.isDefault);
   const sortedProfiles: Profile[] = profiles?.sort((a, b) =>
-    !(a.isDefault !== b.isDefault) ? 0 : a.isDefault ? -1 : 1
+    a.isDefault === b.isDefault ? 0 : a.isDefault ? -1 : 1
   );
 
   useEffect(() => {
@@ -64,14 +65,10 @@ const SetProfile: FC = () => {
   const [createSetDefaultProfileTypedData, { loading: typedDataLoading }] = useMutation<Mutation>(
     CreateSetDefaultProfileTypedDataDocument,
     {
-      onCompleted: async ({
-        createSetDefaultProfileTypedData
-      }: {
-        createSetDefaultProfileTypedData: SetDefaultProfileBroadcastItemResult;
-      }) => {
+      onCompleted: async ({ createSetDefaultProfileTypedData }) => {
         try {
           const { id, typedData } = createSetDefaultProfileTypedData;
-          const { wallet, profileId, deadline } = typedData?.value;
+          const { wallet, profileId, deadline } = typedData.value;
           const signature = await signTypedDataAsync(getSignature(typedData));
           const { v, r, s } = splitSignature(signature);
           const sig = { v, r, s, deadline };
@@ -121,60 +118,58 @@ const SetProfile: FC = () => {
   const isLoading = typedDataLoading || signLoading || writeLoading || broadcastLoading;
 
   return (
-    <Card>
-      <CardBody className="space-y-5">
-        {error && <ErrorMessage title="Transaction failed!" error={error} />}
-        {hasDefaultProfile ? (
-          <>
-            <div className="text-lg font-bold">Your default profile</div>
-            <UserProfile profile={sortedProfiles[0]} />
-          </>
-        ) : (
-          <div className="flex items-center space-x-1.5 font-bold text-yellow-500">
-            <ExclamationIcon className="w-5 h-5" />
-            <div>You don&rsquo;t have any default profile set!</div>
-          </div>
-        )}
-        <div className="text-lg font-bold">Select default profile</div>
-        <p>
-          Selecting your default account helps to display the selected profile across {APP_NAME}, you can
-          change your default profile anytime.
+    <Card className="space-y-5 p-5">
+      {error && <ErrorMessage title="Transaction failed!" error={error} />}
+      {hasDefaultProfile ? (
+        <>
+          <div className="text-lg font-bold">Your default profile</div>
+          <UserProfile profile={sortedProfiles[0]} />
+        </>
+      ) : (
+        <div className="flex items-center space-x-1.5 font-bold text-yellow-500">
+          <ExclamationIcon className="w-5 h-5" />
+          <div>You don&rsquo;t have any default profile set!</div>
+        </div>
+      )}
+      <div className="text-lg font-bold">Select default profile</div>
+      <p>
+        Selecting your default account helps to display the selected profile across {APP_NAME}, you can change
+        your default profile anytime.
+      </p>
+      <div className="text-lg font-bold">What else you should know</div>
+      <div className="text-sm text-gray-500 divide-y dark:divide-gray-700">
+        <p className="pb-3">
+          Only the default profile will be visible across the {APP_NAME}, example notifications, follow etc.
         </p>
-        <div className="text-lg font-bold">What else you should know</div>
-        <div className="text-sm text-gray-500 divide-y dark:divide-gray-700">
-          <p className="pb-3">
-            Only the default profile will be visible across the {APP_NAME}, example notifications, follow etc.
-          </p>
-          <p className="py-3">You can change default profile anytime here.</p>
-        </div>
-        <div>
-          <div className="label">Select profile</div>
-          <select
-            className="w-full bg-white rounded-xl border border-gray-300 outline-none dark:bg-gray-800 disabled:bg-gray-500 disabled:bg-opacity-20 disabled:opacity-60 dark:border-gray-700/80 focus:border-brand-500 focus:ring-brand-400"
-            onChange={(e) => setSelectedUser(e.target.value)}
-          >
-            {sortedProfiles?.map((profile: Profile) => (
-              <option key={profile?.id} value={profile?.id}>
-                @{profile?.handle}
-              </option>
-            ))}
-          </select>
-        </div>
-        <div className="flex flex-col space-y-2">
-          <Button
-            className="ml-auto"
-            type="submit"
-            disabled={isLoading}
-            onClick={setDefaultProfile}
-            icon={isLoading ? <Spinner size="xs" /> : <PencilIcon className="w-4 h-4" />}
-          >
-            Save
-          </Button>
-          {writeData?.hash ?? broadcastData?.broadcast?.txHash ? (
-            <IndexStatus txHash={writeData?.hash ?? broadcastData?.broadcast?.txHash} reload />
-          ) : null}
-        </div>
-      </CardBody>
+        <p className="py-3">You can change default profile anytime here.</p>
+      </div>
+      <div>
+        <div className="label">Select profile</div>
+        <select
+          className="w-full bg-white rounded-xl border border-gray-300 outline-none dark:bg-gray-800 disabled:bg-gray-500 disabled:bg-opacity-20 disabled:opacity-60 dark:border-gray-700/80 focus:border-brand-500 focus:ring-brand-400"
+          onChange={(e) => setSelectedUser(e.target.value)}
+        >
+          {sortedProfiles?.map((profile: Profile) => (
+            <option key={profile?.id} value={profile?.id}>
+              @{profile?.handle}
+            </option>
+          ))}
+        </select>
+      </div>
+      <div className="flex flex-col space-y-2">
+        <Button
+          className="ml-auto"
+          type="submit"
+          disabled={isLoading}
+          onClick={setDefaultProfile}
+          icon={isLoading ? <Spinner size="xs" /> : <PencilIcon className="w-4 h-4" />}
+        >
+          Save
+        </Button>
+        {writeData?.hash ?? broadcastData?.broadcast?.txHash ? (
+          <IndexStatus txHash={writeData?.hash ?? broadcastData?.broadcast?.txHash} reload />
+        ) : null}
+      </div>
     </Card>
   );
 };

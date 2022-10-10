@@ -1,12 +1,11 @@
-import { ApolloCache, useMutation } from '@apollo/client';
-import { BroadcastDocument } from '@generated/documents';
+import type { ApolloCache } from '@apollo/client';
+import { useMutation } from '@apollo/client';
+import { BroadcastDocument } from '@generated/types';
 import toast from 'react-hot-toast';
 import { ERRORS } from 'src/constants';
 
 interface Props {
-  // eslint-disable-next-line no-unused-vars
   onCompleted?: (data: any) => void;
-  // eslint-disable-next-line no-unused-vars
   update?: (cache: ApolloCache<any>) => void;
 }
 

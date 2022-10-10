@@ -1,5 +1,5 @@
 import useStaffMode from '@components/utils/hooks/useStaffMode';
-import { Profile } from '@generated/types';
+import type { Profile } from '@generated/types';
 import { Menu, Transition } from '@headlessui/react';
 import {
   CheckCircleIcon,
@@ -13,12 +13,14 @@ import {
   UserIcon
 } from '@heroicons/react/outline';
 import getAvatar from '@lib/getAvatar';
+import isGardener from '@lib/isGardener';
 import isStaff from '@lib/isStaff';
 import { Mixpanel } from '@lib/mixpanel';
 import resetAuthData from '@lib/resetAuthData';
 import clsx from 'clsx';
 import { useTheme } from 'next-themes';
-import { FC, Fragment } from 'react';
+import type { FC } from 'react';
+import { Fragment } from 'react';
 import { useAppPersistStore, useAppStore } from 'src/store/app';
 import { PROFILE, STAFFTOOLS, SYSTEM } from 'src/tracking';
 import { useDisconnect } from 'wagmi';
@@ -103,6 +105,20 @@ const SignedUser: FC = () => {
                   <div>Settings</div>
                 </div>
               </Menu.Item>
+              {isGardener(currentProfile?.id) && (
+                <Menu.Item
+                  as={NextLink}
+                  href="/mod"
+                  className={({ active }: { active: boolean }) =>
+                    clsx({ 'dropdown-active': active }, 'menu-item')
+                  }
+                >
+                  <div className="flex items-center space-x-1.5">
+                    <ShieldCheckIcon className="w-4 h-4" />
+                    <div>Moderation</div>
+                  </div>
+                </Menu.Item>
+              )}
               <Menu.Item
                 as="a"
                 onClick={() => {

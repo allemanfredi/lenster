@@ -1,5 +1,4 @@
-/* eslint-disable no-unused-vars */
-import { LensterPublication } from '@generated/lenstertypes';
+import type { LensterPublication } from '@generated/lenstertypes';
 import create from 'zustand';
 
 interface GlobalModalState {
